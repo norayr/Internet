@@ -1,4 +1,4 @@
-MODULE types; (*noch 23.2.2017 / 13.4.2017*)
+MODULE netTypes; (*noch 23.2.2017 / 13.4.2017*)
 IMPORT SYS := SYSTEM;
 
 
@@ -38,4 +38,4 @@ TYPE
       out := SYS.VAL(Int16, tmpout)
    END htons;
 
-END types.
+END netTypes.

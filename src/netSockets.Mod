@@ -1,10 +1,10 @@
-MODULE sockets; (*noch 23.2.2017 / 14.4.2017*)
-IMPORT types, SYS := SYSTEM;
+MODULE netSockets; (*noch 23.2.2017 / 14.4.2017*)
+IMPORT netTypes, SYS := SYSTEM;
 
 TYPE
-     Int16* = types.Int16; (* INTEGER on 32 bit platform *)
-     Int32* = types.Int32;
-     Int64* = types.Int64;
+     Int16* = netTypes.Int16; (* INTEGER on 32 bit platform *)
+     Int32* = netTypes.Int32;
+     Int64* = netTypes.Int64;
 
 CONST
    SockStream*    = 1;
@@ -153,4 +153,4 @@ END sockaddrCheck;
 BEGIN
 
 
-END sockets.
+END netSockets.
