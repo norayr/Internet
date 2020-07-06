@@ -5,7 +5,7 @@ BLD=bld
 all:
 		mkdir -p $(BLD)
 		cd $(BLD) && \
-		$(VOC) -s \
+		voc -s \
 		../src/netTypes.Mod \
 		../src/netdb.Mod \
 		../src/netSockets.Mod \
