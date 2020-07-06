@@ -1,15 +1,17 @@
 VOC = /opt/voc/bin/voc
-BLD=bld
-
+BUILD="build"
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+mkfile_dir_path := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
 all:
-		mkdir -p $(BLD)
-		cd $(BLD) && \
+		mkdir -p $(BUILD)
+		cd $(BUILD) && \
 		voc -s \
-		../src/netTypes.Mod \
-		../src/netdb.Mod \
-		../src/netSockets.Mod \
-		../src/Internet.Mod
+		$(mkfile_dir_path)/src/netTypes.Mod \
+		$(mkfile_dir_path)/src/netdb.Mod \
+		$(mkfile_dir_path)/src/netSockets.Mod \
+		$(mkfile_dir_path)/src/Internet.Mod
 
 clean:
-		if [ -d "$(BLD)" ]; then rm -rf $(BLD); fi
+		if [ -d "$(BUILD)" ]; then rm -rf $(BUILD); fi
