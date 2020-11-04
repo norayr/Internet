@@ -1,5 +1,5 @@
 MODULE testServer;
-IMPORT server, Internet, Platform, Out, Strings, SYSTEM;
+IMPORT server, Internet, Out, Platform;
 
 VAR s: server.server;
 
@@ -9,14 +9,13 @@ VAR
   n:   LONGINT;
 BEGIN
   aff := "Affirmative, Dave";
-(*  IF Platform.Read(sock, SYSTEM.ADR(str), 256, n) # 0 THEN *)
   IF ~Internet.ReadBuf(sock, str, n) THEN
     Out.String("error reading from socket"); Out.Ln;
   ELSE
     str[n] := 0X; (* Make sure that received message is zero terminated *)
     Out.String("received message is "); Out.String(str); Out.Ln;
 
-    IF Platform.Write(sock, SYSTEM.ADR(aff), Strings.Length(aff)) # 0 THEN
+    IF ~Internet.Write(sock, aff) THEN
       Out.String("error writing to socket"); Out.Ln
     END;
   END;
