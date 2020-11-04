@@ -1,6 +1,7 @@
 MODULE testServer;
-IMPORT Platform;
+IMPORT server, Platform, Out, Strings, SYSTEM;
 
+VAR s: server.server;
 
 PROCEDURE DoSmth(sock: Platform.FileHandle);
 VAR
@@ -20,5 +21,14 @@ BEGIN
     END;
   END;
 END DoSmth;
+
+BEGIN
+s := server.Create();
+server.setPort(s, 2023);
+server.setMaxQueue(s, 5);
+server.setHandler(s, DoSmth);
+
+server.start(s);
+server.serve(s);
 
 END testServer.

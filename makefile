@@ -11,7 +11,10 @@ all:
 		$(mkfile_dir_path)/src/netTypes.Mod \
 		$(mkfile_dir_path)/src/netdb.Mod \
 		$(mkfile_dir_path)/src/netSockets.Mod \
-		$(mkfile_dir_path)/src/Internet.Mod
+		$(mkfile_dir_path)/src/Internet.Mod \
+		$(mkfile_dir_path)/src/netForker.Mod \
+		$(mkfile_dir_path)/src/server.Mod \
+		$(mkfile_dir_path)/tst/testServer.Mod -m
 
 clean:
 		if [ -d "$(BUILD)" ]; then rm -rf $(BUILD); fi
