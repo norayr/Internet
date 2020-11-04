@@ -1,5 +1,5 @@
 MODULE testServer;
-IMPORT server, Platform, Out, Strings, SYSTEM;
+IMPORT server, Internet, Platform, Out, Strings, SYSTEM;
 
 VAR s: server.server;
 
@@ -10,7 +10,7 @@ VAR
 BEGIN
   aff := "Affirmative, Dave";
 (*  IF Platform.Read(sock, SYSTEM.ADR(str), 256, n) # 0 THEN *)
-  IF Platform.ReadBuf(sock, str, n) # 0 THEN
+  IF ~Internet.ReadBuf(sock, str, n) THEN
     Out.String("error reading from socket"); Out.Ln;
   ELSE
     str[n] := 0X; (* Make sure that received message is zero terminated *)

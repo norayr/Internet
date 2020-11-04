@@ -9,7 +9,7 @@ TYPE
   Int32 = netTypes.Int32;
   Int64 = netTypes.Int64;
 
-PROCEDURE Write*(fd: Socket; buf: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE Write*(VAR fd: Socket; VAR buf: ARRAY OF CHAR): BOOLEAN;
 VAR
    l: SYSTEM.ADDRESS;
    r: INTEGER;
@@ -27,7 +27,15 @@ BEGIN
   END;
 END Write;
 
-PROCEDURE Read*(fd: Socket; VAR buf: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE ReadBuf*(VAR fd: Socket; VAR buf: ARRAY OF CHAR; VAR n: LONGINT): BOOLEAN;
+VAR
+  r : INTEGER;
+BEGIN
+  r := Platform.ReadBuf(fd, buf, n); (* returns buffer length as n *)
+  IF r # 0 THEN RETURN FALSE ELSE RETURN TRUE END
+END ReadBuf;
+
+PROCEDURE Read*(VAR fd: Socket; VAR buf: ARRAY OF CHAR): BOOLEAN;
 VAR
   p: SYSTEM.ADDRESS;
   l, f: LONGINT;
