@@ -6,6 +6,7 @@ TYPE
      intarr64 = ARRAY 8 OF SYS.BYTE; (* to emulate int16 on x86_64; -- noch *)
      intarr32 = ARRAY 4 OF SYS.BYTE;
      intarr16 = ARRAY 2 OF SYS.BYTE;
+     Int8*  = SHORTINT;
      Int16* = INTEGER; (* INTEGER on 32 bit platform *)
      Int32* = LONGINT;
      Int64* = HUGEINT;

@@ -2,6 +2,7 @@ MODULE netSockets; (*noch 23.2.2017 / 14.4.2017*)
 IMPORT netTypes, SYS := SYSTEM;
 
 TYPE
+     Int8* = netTypes.Int8; (* INTEGER on 32 bit platform *)
      Int16* = netTypes.Int16; (* INTEGER on 32 bit platform *)
      Int32* = netTypes.Int32;
      Int64* = netTypes.Int64;
@@ -62,7 +63,7 @@ CONST
    InAddrAny* = 0;
 
 TYPE
-(*
+
    (* /usr/include/netinet/in.h *)
    InAddr* = RECORD
     SAddr* : Int32;
@@ -74,7 +75,7 @@ TYPE
     SinAddr*   : InAddr;
     SinZero*   : ARRAY 8 OF CHAR;
    END;
-*)
+
    (* /usr/include/sys/socket.h *)
 
    SockAddr* = RECORD
@@ -150,6 +151,22 @@ TYPE
     END
 END sockaddrCheck;
 *)
+
+PROCEDURE -SetCShort(i: INTEGER; VAR si: Int16)
+     "*(short*)si = i";
+
+PROCEDURE -SetCShortSwapped(i: INTEGER; VAR si: Int16)
+     "*(short*)si = ((i >> 8) & 0x00ff) | ((i << 8) & 0xff00)";
+
+PROCEDURE SetSockAddrIn*(family, port, inaddr: Int16; VAR sai: SockAddrIn);
+   VAR i: INTEGER;
+   BEGIN
+     SetCShort(family, sai.SinFamily);
+     SetCShortSwapped(port, sai.SinPort);
+     sai.SinAddr.SAddr := inaddr;
+     i := 0; WHILE i < 8 DO sai.SinZero[i] := 0X; INC(i) END
+END SetSockAddrIn;
+
 BEGIN
 
 
