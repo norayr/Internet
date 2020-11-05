@@ -9,14 +9,14 @@ TYPE
   Int32 = netTypes.Int32;
   Int64 = netTypes.Int64;
 
-PROCEDURE Write*(VAR fd: Socket; VAR buf: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE Write*(VAR fd: Socket; buf: ARRAY OF CHAR): BOOLEAN;
 VAR
    l: SYSTEM.ADDRESS;
    r: INTEGER;
  len: LONGINT;
 BEGIN
   l := SYSTEM.ADR(buf[0]);
-  len := Strings.Length(buf)-1;
+  len := Strings.Length(buf);
   r := Platform.Write(fd, l, len);
   IF r = -1 THEN
     (*Out.String("write() failed."); Out.Ln;*)

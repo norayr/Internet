@@ -15,6 +15,8 @@ all:
 		$(mkfile_dir_path)/src/netForker.Mod \
 		$(mkfile_dir_path)/src/server.Mod \
 		$(mkfile_dir_path)/tst/testServer.Mod -m
+		cd $(BUILD) && \
+		voc $(mkfile_dir_path)/tst/testClient.Mod -m
 
 clean:
 		if [ -d "$(BUILD)" ]; then rm -rf $(BUILD); fi
