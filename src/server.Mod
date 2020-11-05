@@ -18,6 +18,7 @@ TYPE
     sockfd   : LONGINT;
   newsockfd* : LONGINT;
     ServAddr : netSockets.SockAddrIn;
+   clientIP- : ARRAY 16 OF CHAR;
          pid : LONGINT;
          res : Platform.ErrorCode;
  sockaddrlen : LONGINT;
@@ -92,7 +93,6 @@ BEGIN
 END start;
 
 PROCEDURE serve*(VAR s: server);
-VAR clientStr: ARRAY 16 OF CHAR;
 BEGIN
   LOOP
     s^.sockaddrlen := SIZE(netSockets.SockAddrIn);
@@ -103,13 +103,13 @@ BEGIN
       Out.String("accept okay")
     END;
     Out.Ln;
-    Internet.SockAddrInToIP4(s^.ServAddr, clientStr);
-    Out.String(clientStr); Out.Ln;
+    Out.String(s^.clientIP); Out.Ln;
     s^.pid := netForker.fork();
     IF s^.pid < 0 THEN
       Out.String("error on fork")
     ELSIF s^.pid = 0 THEN
       Out.String("forked okay"); Out.Ln;
+      Internet.SockAddrInToIP4(s^.ServAddr, s^.clientIP);
       s^.res := Platform.Close(s^.sockfd);
       s^.handle(s);
       EXIT

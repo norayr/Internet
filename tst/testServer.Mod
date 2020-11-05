@@ -10,6 +10,8 @@ VAR
 BEGIN
   aff := "Affirmative, Dave";
   REPEAT
+    Out.String("client IP: ");
+    Out.String(s^.clientIP); Out.String(" ; ");
     IF ~Internet.ReadBuf(s^.newsockfd, str, n) THEN
       Out.String("error reading from socket"); Out.Ln;
     ELSE
