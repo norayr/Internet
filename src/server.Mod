@@ -9,14 +9,14 @@ CONST
   msgHandlerNotSet  = "response handler is not set";
 
 TYPE
-      handler* = PROCEDURE(sock: Platform.FileHandle);
 
      server* = POINTER TO serverDesc;
+    handler* = PROCEDURE (VAR s: server);
   serverDesc = RECORD
         Port : INTEGER;
     MaxQueue : INTEGER;
     sockfd   : LONGINT;
-   newsockfd : LONGINT;
+  newsockfd* : LONGINT;
     ServAddr : netSockets.SockAddrIn;
          pid : LONGINT;
          res : Platform.ErrorCode;
@@ -109,7 +109,7 @@ BEGIN
     ELSIF s^.pid = 0 THEN
       Out.String("forked okay"); Out.Ln;
       s^.res := Platform.Close(s^.sockfd);
-      s^.handle(s^.newsockfd);
+      s^.handle(s);
       EXIT
     ELSE
       s^.res := Platform.Close(s^.newsockfd)
