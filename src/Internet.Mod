@@ -1,5 +1,5 @@
 MODULE Internet; (*noch 14.4.2017 / 14.4.2017*)
-IMPORT netSockets, netdb, netTypes, Strings, Out, Platform, SYSTEM;
+IMPORT netSockets, netdb, netTypes, Strings, Out, Platform, IntStr := oocIntStr, SYSTEM;
 
 TYPE
 
@@ -96,8 +96,6 @@ BEGIN
     Out.String("connect() failed."); Out.Ln;
     RETURN FALSE
   END;
-
-
 END Connect;
 
 PROCEDURE Disconnect*(VAR fd: Socket);
@@ -106,5 +104,57 @@ VAR
 BEGIN
 i := Platform.Close(fd);
 END Disconnect;
+
+PROCEDURE SockAddrInToIP4*(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);
+CONST
+  one      = 0FFH;       (* 255 *)
+  two      = 0FF00H;     (* 65280 *)
+  three    = 0FF0000H;   (* 16711680 *)
+  four     = 0FF000000H; (* 4278190080 *)
+VAR
+  setSAddr : SET;
+  set1, set2, set3, set4: SET;
+  first, second, third, fourth: INTEGER;
+  o1, o2, o3, o4 : LONGINT;
+  str0 : ARRAY 4 OF CHAR;
+BEGIN
+ set1 := SYSTEM.VAL(SET, one);
+ set2 := SYSTEM.VAL(SET, two);
+ set3 := SYSTEM.VAL(SET, three);
+ set4 := SYSTEM.VAL(SET, four);
+
+ setSAddr := SYSTEM.VAL(SET, sai.SinAddr.SAddr);
+
+ first    := SYSTEM.VAL(INTEGER, setSAddr * set1);
+ second   := SYSTEM.VAL(INTEGER, setSAddr * set2);
+ third    := SYSTEM.VAL(INTEGER, setSAddr * set3);
+ o4   := SYSTEM.VAL(LONGINT, (setSAddr * set4));
+Out.Int(first, 0); Out.Ln;
+Out.Int(second, 0); Out.Ln;
+Out.Int(third, 0); Out.Ln;
+Out.Int(fourth, 0); Out.Ln;
+ o1 := first;
+ o2 := ASH(second, 8);
+ o3 := ASH(third,  16);
+ o4 := ASH(o4, 24);
+
+Out.Int(o1, 0); Out.Ln;
+Out.Int(o2, 0); Out.Ln;
+Out.Int(o3, 0); Out.Ln;
+Out.Int(o4, 0); Out.Ln;
+
+ IntStr.IntToStr(o1, str);
+ Strings.Append(".", str);
+ IntStr.IntToStr(o2, str0);
+ Strings.Append(str0, str);
+ Strings.Append(".", str);
+ IntStr.IntToStr(o3, str0);
+ Strings.Append(str0, str);
+ Strings.Append(".", str);
+ IntStr.IntToStr(o4, str0);
+ Strings.Append(str0, str);
+
+END SockAddrInToIP4;
+
 
 END Internet.

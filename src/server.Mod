@@ -1,6 +1,6 @@
 MODULE server;
 
-IMPORT netForker, netSockets, (*List,*) Out, SYSTEM, Platform, Strings;
+IMPORT netForker, netSockets, Internet, Out, SYSTEM, Platform, Strings;
 
 CONST
   defaultPort = 2055;
@@ -92,6 +92,7 @@ BEGIN
 END start;
 
 PROCEDURE serve*(VAR s: server);
+VAR clientStr: ARRAY 16 OF CHAR;
 BEGIN
   LOOP
     s^.sockaddrlen := SIZE(netSockets.SockAddrIn);
@@ -102,7 +103,8 @@ BEGIN
       Out.String("accept okay")
     END;
     Out.Ln;
-
+    Internet.SockAddrInToIP4(s^.ServAddr, clientStr);
+    Out.String(clientStr); Out.Ln;
     s^.pid := netForker.fork();
     IF s^.pid < 0 THEN
       Out.String("error on fork")

@@ -167,7 +167,4 @@ PROCEDURE SetSockAddrIn*(family, port, inaddr: Int16; VAR sai: SockAddrIn);
      i := 0; WHILE i < 8 DO sai.SinZero[i] := 0X; INC(i) END
 END SetSockAddrIn;
 
-BEGIN
-
-
 END netSockets.
