@@ -114,7 +114,7 @@ CONST
 VAR
   setSAddr : SET;
   set1, set2, set3, set4: SET;
-  first, second, third, fourth: INTEGER;
+  first, second, third, fourth: SET;
   o1, o2, o3, o4 : LONGINT;
   str0 : ARRAY 4 OF CHAR;
 BEGIN
@@ -125,23 +125,15 @@ BEGIN
 
  setSAddr := SYSTEM.VAL(SET, sai.SinAddr.SAddr);
 
- first    := SYSTEM.VAL(INTEGER, setSAddr * set1);
- second   := SYSTEM.VAL(INTEGER, setSAddr * set2);
- third    := SYSTEM.VAL(INTEGER, setSAddr * set3);
- o4   := SYSTEM.VAL(LONGINT, (setSAddr * set4));
-Out.Int(first, 0); Out.Ln;
-Out.Int(second, 0); Out.Ln;
-Out.Int(third, 0); Out.Ln;
-Out.Int(fourth, 0); Out.Ln;
- o1 := first;
- o2 := ASH(second, 8);
- o3 := ASH(third,  16);
- o4 := ASH(o4, 24);
+ first    := setSAddr * set1;
+ second   := setSAddr * set2;
+ third    := setSAddr * set3;
+ fourth   := setSAddr * set4;
 
-Out.Int(o1, 0); Out.Ln;
-Out.Int(o2, 0); Out.Ln;
-Out.Int(o3, 0); Out.Ln;
-Out.Int(o4, 0); Out.Ln;
+ o1 := SYSTEM.VAL(INTEGER, first);
+ o2 := SYSTEM.VAL(LONGINT, SYSTEM.LSH(second, -8));
+ o3 := SYSTEM.VAL(LONGINT, SYSTEM.LSH(third,  -16));
+ o4 := SYSTEM.VAL(LONGINT, SYSTEM.LSH(fourth, -24));
 
  IntStr.IntToStr(o1, str);
  Strings.Append(".", str);
