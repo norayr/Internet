@@ -106,6 +106,7 @@ i := Platform.Close(fd);
 END Disconnect;
 
 PROCEDURE SockAddrInToIP4*(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);
+(* https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c *)
 CONST
   one      = 0FFH;       (* 255 *)
   two      = 0FF00H;     (* 65280 *)
