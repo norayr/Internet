@@ -19,7 +19,7 @@ TYPE
   newsockfd* : LONGINT;
     ServAddr : netSockets.SockAddrIn;
    clientIP- : ARRAY 16 OF CHAR;
-         pid : LONGINT;
+        pid- : LONGINT;
          res : Platform.ErrorCode;
  sockaddrlen : LONGINT;
  timeoutval- : LONGREAL;
