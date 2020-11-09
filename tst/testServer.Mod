@@ -15,9 +15,9 @@ BEGIN
   time.unixTime(startTime);
   aff := "Affirmative, Dave";
   REPEAT
-    Out.String("client IP: ");
+    (*Out.String("client IP: ");
     Out.String(s^.clientIP); Out.String(" ; ");
-    Out.String("reading from client"); Out.Ln;
+    Out.String("reading from client"); Out.Ln;*)
     IF ~Internet.ReadBuf(s^.newsockfd, str, n) THEN
       (*Out.String("no message"); Out.Ln;*)
       time.unixTime(endTime);
@@ -34,12 +34,12 @@ BEGIN
     time.unixTime(endTime);
     dfTime := time.unixTimeDiff(endTime, startTime);
     IF dfTime > s.timeoutval THEN keep := FALSE END;
-    Out.String("waiting a bit..."); Out.Ln;
+    (*Out.String("waiting a bit..."); Out.Ln;*)
     Platform.Delay(500);
   UNTIL ~keep;
   Out.String("connection closed, exiting"); Out.Ln;
   Internet.Disconnect(s^.newsockfd);
-  Out.String("disconnected");
+  Out.String("disconnected"); Out.Ln; Out.Ln;
   HALT(0);
 END DoSmth;
 

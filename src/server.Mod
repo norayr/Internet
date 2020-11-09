@@ -26,6 +26,10 @@ TYPE
       handle : handler
       END;
 
+PROCEDURE -inclSgnl() "#include <signal.h>";
+PROCEDURE -ingoreChildExit() "signal(SIGCHLD,SIG_IGN)";
+(* if this is not done, exiting child remains zombie unless parent exits *)
+
 PROCEDURE Create*(): server;
 VAR s: server;
 BEGIN
@@ -152,5 +156,5 @@ BEGIN
 END serve;
 
 BEGIN
-
+  ingoreChildExit()
 END server.
