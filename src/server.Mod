@@ -22,6 +22,7 @@ TYPE
          pid : LONGINT;
          res : Platform.ErrorCode;
  sockaddrlen : LONGINT;
+ timeoutval- : LONGREAL;
       handle : handler
       END;
 
@@ -32,6 +33,7 @@ BEGIN
   s^.Port := defaultPort;
   s^.MaxQueue := defaultMaxQ; 
   s^.handle := NIL;
+  s^.timeoutval := 60.0;
   RETURN s
 END Create;
 
@@ -43,6 +45,11 @@ BEGIN
     Out.String(msgNotInitialized); Out.Ln
   END
 END setHandler;
+
+PROCEDURE setTimeOut*(VAR s: server; to: LONGREAL);
+BEGIN
+  s^.timeoutval := to
+END setTimeOut;
 
 PROCEDURE setPort*(VAR s: server; p: INTEGER);
 BEGIN

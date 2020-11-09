@@ -98,11 +98,15 @@ BEGIN
   END;
 END Connect;
 
+PROCEDURE -shtdwn (VAR fd: Socket)
+  "shutdown (fd, 2)";
+
 PROCEDURE Disconnect*(VAR fd: Socket);
 VAR
   i : INTEGER;
 BEGIN
-i := Platform.Close(fd);
+  (*i := Platform.Close(fd);*)
+  shtdwn(fd)
 END Disconnect;
 
 PROCEDURE getClientIP4*(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);

@@ -14,6 +14,7 @@ all:
 		$(mkfile_dir_path)/src/Internet.Mod \
 		$(mkfile_dir_path)/src/netForker.Mod \
 		$(mkfile_dir_path)/src/server.Mod \
+		$(mkfile_dir_path)/Time/src/time.Mod \
 		$(mkfile_dir_path)/tst/testServer.Mod -m
 		cd $(BUILD) && \
 		voc $(mkfile_dir_path)/tst/testClient.Mod -m
