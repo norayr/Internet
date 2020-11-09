@@ -92,11 +92,23 @@ BEGIN
   Out.Ln;
 END start;
 
-PROCEDURE serve*(VAR s: server);
+PROCEDURE serve*(VAR s: server; newNonBlock: BOOLEAN);
+VAR
+  nb: BOOLEAN;
 BEGIN
+     
   LOOP
     s^.sockaddrlen := SIZE(netSockets.SockAddrIn);
-    s^.newsockfd := netSockets.Accept(s^.sockfd, SYSTEM.VAL(netSockets.SockAddr, s^.ServAddr), s^.sockaddrlen);
+(* linux only way would be this *)
+(*    IF newNonBlock THEN
+      s^.newsockfd := netSockets.AcceptNB(s^.sockfd, SYSTEM.VAL(netSockets.SockAddr, s^.ServAddr), s^.sockaddrlen);
+    ELSE
+      s^.newsockfd := netSockets.Accept(s^.sockfd, SYSTEM.VAL(netSockets.SockAddr, s^.ServAddr), s^.sockaddrlen);
+    END;*)
+
+      (* portable way is this *)
+      s^.newsockfd := netSockets.Accept(s^.sockfd, SYSTEM.VAL(netSockets.SockAddr, s^.ServAddr), s^.sockaddrlen);
+
     IF s^.newsockfd < 0 THEN
       Out.String("error on accept")
     ELSE
@@ -107,9 +119,22 @@ BEGIN
     s^.pid := netForker.fork();
     IF s^.pid < 0 THEN
       Out.String("error on fork")
-    ELSIF s^.pid = 0 THEN
+    ELSIF s^.pid = 0 THEN (* child *)
+
+      (* portable way *)
+      IF newNonBlock THEN
+        nb := netSockets.SetSocketNonBlocking(s^.newsockfd);
+      END;
+      IF nb THEN Out.String("socket set as non-blocking");
+      ELSE Out.String("setting socket as non-blocking failed");
+      END; Out.Ln;
+ 
+
+
       Out.String("forked okay"); Out.Ln;
-      Internet.SockAddrInToIP4(s^.ServAddr, s^.clientIP);
+      Internet.getClientIP4(s^.ServAddr, s^.clientIP);
+      (* getting current pid *)
+      s^.pid := Platform.PID;
       s^.res := Platform.Close(s^.sockfd);
       s^.handle(s);
       EXIT

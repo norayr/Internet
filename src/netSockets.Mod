@@ -113,10 +113,23 @@ TYPE
    PROCEDURE -accept(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32
       "(int)accept(sockfd, addr, addrlen)";
 
+   PROCEDURE -inclFcntl() "#include <fcntl.h>"; (* for O_NONBLOCK *)
+
+   PROCEDURE -acceptnb(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32
+      "(int)accept4(sockfd, addr, addrlen, O_NONBLOCK)"; (* linux only way *)
+
+
    PROCEDURE Accept*(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32;
    BEGIN
       RETURN accept(sockfd, addr, addrlen)
    END Accept;
+
+   PROCEDURE AcceptNB*(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32;
+   BEGIN
+      RETURN acceptnb(sockfd, addr, addrlen)
+   END AcceptNB;
+
+
     (* int connect(int sockfd, const struct sockaddr *addr,
                    socklen_t addrlen); *)
    PROCEDURE -connect(sockfd: Int32; addr: SYS.ADDRESS; addrlen: Int32): Int32
@@ -166,5 +179,30 @@ PROCEDURE SetSockAddrIn*(family, port, inaddr: Int16; VAR sai: SockAddrIn);
      sai.SinAddr.SAddr := inaddr;
      i := 0; WHILE i < 8 DO sai.SinZero[i] := 0X; INC(i) END
 END SetSockAddrIn;
+
+(* functions below require include fcntl.h which is done above
+   also for using accept4, but that's linux only way
+   these functions are the portable way of setting socket to non-blocking mode *)
+
+PROCEDURE -getFlags(VAR fd: LONGINT): LONGINT 
+  "(LONGINT)fcntl( *fd, F_GETFL)";
+
+(* here be careful with the parentheses and the following asterisk, it is interpreted as an open comment by oberon parser *)
+
+PROCEDURE -setNonBlocking(VAR fd: LONGINT; flags: LONGINT): LONGINT
+  "(LONGINT)fcntl( *fd, F_SETFL, flags| O_NONBLOCK)";
+
+PROCEDURE SetSocketNonBlocking*(VAR fd: LONGINT): BOOLEAN;
+VAR
+  currentFlags, res: LONGINT;
+BEGIN
+  currentFlags := getFlags(fd);
+  IF currentFlags # -1 THEN
+    res := setNonBlocking(fd, currentFlags);
+    IF res = -1 THEN RETURN FALSE ELSE RETURN TRUE END;
+  ELSE
+    RETURN FALSE
+  END;
+END SetSocketNonBlocking;
 
 END netSockets.

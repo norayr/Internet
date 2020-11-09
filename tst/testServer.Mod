@@ -12,9 +12,11 @@ BEGIN
   REPEAT
     Out.String("client IP: ");
     Out.String(s^.clientIP); Out.String(" ; ");
+    Out.String("reading from client"); Out.Ln;
     IF ~Internet.ReadBuf(s^.newsockfd, str, n) THEN
       Out.String("error reading from socket"); Out.Ln;
     ELSE
+      Out.String("got message from client"); Out.Ln;
       str[n] := 0X; (* Make sure that received message is zero terminated *)
       Out.String("received message is "); Out.String(str); Out.Ln;
 
@@ -22,6 +24,7 @@ BEGIN
         Out.String("error writing to socket"); Out.Ln
       END;
     END;
+    Out.String("waiting a bit..."); Out.Ln;
     Platform.Delay(500);
   UNTIL str = "bye";
   Internet.Disconnect(s^.newsockfd);
@@ -34,6 +37,6 @@ server.setMaxQueue(s, 5);
 server.setHandler(s, DoSmth);
 
 server.start(s);
-server.serve(s);
+server.serve(s, TRUE);
 
 END testServer.

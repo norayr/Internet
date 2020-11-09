@@ -105,7 +105,7 @@ BEGIN
 i := Platform.Close(fd);
 END Disconnect;
 
-PROCEDURE SockAddrInToIP4*(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);
+PROCEDURE getClientIP4*(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);
 (* https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c *)
 CONST
   one      = 0FFH;       (* 255 *)
@@ -147,7 +147,11 @@ BEGIN
  IntStr.IntToStr(o4, str0);
  Strings.Append(str0, str);
 
-END SockAddrInToIP4;
-
-
+END getClientIP4;
+(*
+PROCEDURE setNB*(VAR fd: LONGINT): BOOLEAN;
+BEGIN
+  RETURN netSockets.SetSocketNonBlocking(fd)
+END setNB;
+*)
 END Internet.
