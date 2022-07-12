@@ -17,8 +17,8 @@ all: ${DEPS}
 			 ${ROOTDIR}/../src/netForker.Mod      \
 			 ${ROOTDIR}/../src/server.Mod         \
 			 ${ROOTDIR}/../deps/time/src/time.Mod \
-			 ${ROOTDIR}/../tst/testServer.Mod -m
-	cd build; voc    ${ROOTDIR}/../tst/testClient.Mod -m
+			 ${ROOTDIR}/../tests/testServer.Mod -m
+	cd build; voc    ${ROOTDIR}/../tests/testClient.Mod -m
 
 ${DEPS}:
 	@for i in $@; do                                          \
