@@ -3,7 +3,7 @@ BUILD="build"
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir_path := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
-DPS = dps
+DPS = deps
 
 all: get_deps build_deps
 
