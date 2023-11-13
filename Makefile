@@ -17,24 +17,24 @@ all: ${DEPS}
 			 ${ROOTDIR}/../src/netForker.Mod      \
 			 ${ROOTDIR}/../src/server.Mod         \
 			 ${ROOTDIR}/../deps/time/src/time.Mod \
-			 ${ROOTDIR}/../tests/testServer.Mod -m
-	cd build; voc    ${ROOTDIR}/../tests/testClient.Mod -m
+			 ${ROOTDIR}/../test/testServer.Mod -m
+	cd build; voc    ${ROOTDIR}/../test/testClient.Mod -m
 
 ${DEPS}:
-	@for i in $@; do                                          \
-		if [ -d deps/$${i#*/} ]; then                     \
-			printf "Updating %s: " $${i#*/};          \
-			git -C deps/$${i#*/} pull --ff-only       \
-				${GITHUB}$$i > /dev/null 2>&1     \
-				&& echo done                      \
-				|| (echo failed && exit 1);       \
-		else                                              \
-			printf "Fetching %s: " $${i#*/};          \
-			git clone ${GITHUB}$$i deps/$${i#*/}      \
-				> /dev/null 2>&1                  \
-				&& echo done                      \
-				|| (echo failed && exit 1);       \
-		fi                                                \
+	@for i in $@; do                           \
+		if [ -d deps/$${i#*/} ]; then            \
+			printf "Updating %s: " $${i#*/};       \
+			git -C deps/$${i#*/} pull --ff-only    \
+			${GITHUB}$$i > /dev/null 2>&1          \
+			&& echo done                           \
+				|| (echo failed && exit 1);          \
+		else                                     \
+			printf "Fetching %s: " $${i#*/};       \
+			git clone ${GITHUB}$$i deps/$${i#*/}   \
+				> /dev/null 2>&1                     \
+				&& echo done                         \
+				|| (echo failed && exit 1);          \
+		fi                                       \
 	done
 
 clean:
