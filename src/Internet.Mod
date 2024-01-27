@@ -48,6 +48,20 @@ BEGIN
   IF r >= 0 THEN RETURN TRUE ELSE RETURN FALSE END
 END Read;
 
+PROCEDURE ReadBytes*(VAR fd: Socket; VAR buf: ARRAY OF CHAR; count: LONGINT): BOOLEAN;
+VAR
+  p: SYSTEM.ADDRESS;
+  l, f: LONGINT;
+  r: INTEGER;
+BEGIN
+  p := SYSTEM.ADR(buf[0]);
+  l := LEN(buf)-1;
+  f := 0;
+  IF l < count THEN count := l END;
+  r := Platform.Read(fd, p, count, f);
+  IF r >= 0 THEN RETURN TRUE ELSE RETURN FALSE END
+END ReadBytes;
+
 PROCEDURE Connect*(host, port: ARRAY OF CHAR; VAR conn: Socket): BOOLEAN;
 VAR
   hints, res : netdb.addrInfo;
