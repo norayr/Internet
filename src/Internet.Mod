@@ -57,12 +57,9 @@ BEGIN
   p := SYSTEM.ADR(buf[0]);
   l := LEN(buf)-1;
   f := 0;
-  Out.String("count is "); Out.Int(count, 0); Out.Ln;
-  Out.String("len buf is "); Out.Int(l, 0); Out.Ln;
   IF l < count THEN Out.String("warning, more bytes requested than the buffer has"); Out.Ln; count := l END;
   r := Platform.Read(fd, p, count, f);
      buf[l] := 0X;
-     Out.String("have read "); Out.String(buf); Out.Ln;
   IF r >= 0 THEN RETURN TRUE ELSE RETURN FALSE END
 END ReadBytes;
 
