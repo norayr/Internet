@@ -1,39 +1,60 @@
+DEPEND = github.com/norayr/time
+
 VOC = /opt/voc/bin/voc
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir_path := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-ifndef BUILD
-BUILD="build"
-endif
-build_dir_path := $(mkfile_dir_path)/$(BUILD)
-current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
-BLD := $(mkfile_dir_path)/build
-DPD  =  deps
-ifndef DPS
-DPS := $(mkfile_dir_path)/$(DPD)
-endif
-all: get_deps build_deps buildThis
+BUILD := build
+DPS := deps
+DEPS_PATH := $(mkfile_dir_path)/$(DPS)
+BUILD_PATH := $(mkfile_dir_path)/$(BUILD)
+
+# Function to transform GitHub repository URLs to local directory paths
+define dep_path
+$(DEPS_PATH)/$(1)
+endef
+
+# Targets for dependency management
+.PHONY: all get_deps build_deps build_this clean
+
+all: get_deps build_deps build_this
 
 get_deps:
-	mkdir -p $(DPS)
-	if [ -d $(DPS)/time ]; then cd $(DPS)/time; git pull; cd -; else cd $(DPS); git clone https://github.com/norayr/time; cd -; fi
+	@echo "Fetching and updating dependencies..."
+	@mkdir -p $(DEPS_PATH)
+	@for dep in $(DEPEND); do \
+		dep_dir="$(call dep_path,$$dep)"; \
+		if [ ! -d "$$dep_dir" ]; then \
+			git clone "https://$$dep.git" "$$dep_dir"; \
+		else \
+			(cd "$$dep_dir" && git pull); \
+		fi; \
+	done
 
 build_deps:
-	mkdir -p $(BUILD)
-	cd $(BUILD)
-	make -f $(DPS)/time/GNUmakefile BUILD=$(BUILD)
+	@echo "Building dependencies..."
+	@mkdir -p $(BUILD_PATH)
+	@for dep in $(DEPEND); do \
+		dep_dir="$(call dep_path,$$dep)"; \
+		if [ -f "$$dep_dir/GNUmakefile" ] || [ -f "$$dep_dir/Makefile" ]; then \
+			$(MAKE) -C "$$dep_dir" -f "$${dep_dir}/GNUmakefile" BUILD=$(BUILD_PATH) || \
+			$(MAKE) -C "$$dep_dir" -f "$${dep_dir}/Makefile" BUILD=$(BUILD_PATH); \
+		fi; \
+	done
 
-buildThis:
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netTypes.Mod
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netdb.Mod
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netSockets.Mod
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Internet.Mod
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netForker.Mod
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/server.Mod
+build_this:
+	@echo "Building this project..."
+	cd $(BUILD_PATH) && $(VOC) -s $(mkfile_dir_path)/src/netTypes.Mod
+	cd $(BUILD_PATH) && $(VOC) -s $(mkfile_dir_path)/src/netdb.Mod
+	cd $(BUILD_PATH) && $(VOC) -s $(mkfile_dir_path)/src/netSockets.Mod
+	cd $(BUILD_PATH) && $(VOC) -s $(mkfile_dir_path)/src/Internet.Mod
+	cd $(BUILD_PATH) && $(VOC) -s $(mkfile_dir_path)/src/netForker.Mod
+	cd $(BUILD_PATH) && $(VOC) -s $(mkfile_dir_path)/src/server.Mod
 
 tests:
-	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testServer.Mod -m
-	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testClient.Mod -m
-
+	cd $(BUILD_PATH) && $(VOC) $(mkfile_dir_path)/test/testServer.Mod -m
+	cd $(BUILD_PATH) && $(VOC) $(mkfile_dir_path)/test/testClient.Mod -m
+	
 clean:
-	if [ -d "$(BUILD)" ]; then rm -rf $(BLD); fi
+	@echo "Cleaning build directory..."
+	@rm -rf $(BUILD_PATH)
 
