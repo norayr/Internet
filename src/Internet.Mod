@@ -9,20 +9,29 @@ TYPE
   Int32 = netTypes.Int32;
   Int64 = netTypes.Int64;
 
+PROCEDURE -A002 "#include <netdb.h>";
+
 PROCEDURE Write*(VAR fd: Socket; buf: ARRAY OF CHAR): BOOLEAN;
 VAR
    l: SYSTEM.ADDRESS;
    r: INTEGER;
- len: LONGINT;
+   len: LONGINT;
 BEGIN
   l := SYSTEM.ADR(buf[0]);
   len := Strings.Length(buf);
+  Out.String("Client attempting to write: "); Out.String(buf); Out.Ln;
+  Out.String("Buffer length: "); Out.Int(len, 0); Out.Ln;
+  Out.String("Address of buffer: "); Out.Hex(SYSTEM.VAL(SYSTEM.INT64, l), 16); Out.Ln;
+
   r := Platform.Write(fd, l, len);
+
   IF r = -1 THEN
-    (*Out.String("write() failed."); Out.Ln;*)
+    Out.String("Client write() failed with error code: ");
+    r := Platform.Error();
+    Out.Int(r, 0); Out.Ln;
     RETURN FALSE
   ELSE
-    (*Out.String("write() success."); Out.Ln;*)
+    Out.String("Client write() succeeded."); Out.Ln;
     RETURN TRUE
   END;
 END Write;
@@ -31,8 +40,21 @@ PROCEDURE ReadBuf*(VAR fd: Socket; VAR buf: ARRAY OF CHAR; VAR n: LONGINT): BOOL
 VAR
   r : INTEGER;
 BEGIN
+  Out.String("entered ReadBuf"); Out.Ln;
   r := Platform.ReadBuf(fd, buf, n); (* returns buffer length as n *)
-  IF r # 0 THEN RETURN FALSE ELSE RETURN TRUE END
+  Out.String("ReadBuf() called. Result: "); Out.Int(r, 0); Out.String(", Bytes read: "); Out.Int(n, 0); Out.Ln;
+
+  IF n > 0 THEN
+    Out.String("Data read into buffer: "); Out.String(buf); Out.Ln;
+  ELSE
+    Out.String("No data read."); Out.Ln;
+  END;
+
+  IF r # 0 THEN
+    RETURN FALSE
+  ELSE
+    RETURN TRUE
+  END
 END ReadBuf;
 
 PROCEDURE Read*(VAR fd: Socket; VAR buf: ARRAY OF CHAR): BOOLEAN;
@@ -42,10 +64,26 @@ VAR
   r: INTEGER;
 BEGIN
   p := SYSTEM.ADR(buf[0]);
-  l := LEN(buf)-1;
+  l := LEN(buf) - 1;
   f := 0;
+  Out.String("Reading from socket..."); Out.Ln;
+  Out.String("Buffer address: "); Out.Hex(SYSTEM.VAL(SYSTEM.INT64, p), 16); Out.Ln;
+  Out.String("Buffer length: "); Out.Int(l, 0); Out.Ln;
+
+  IF p = 0 THEN
+    Out.String("Error: Buffer address is 0!"); Out.Ln;
+    HALT(10); (* Use a positive value within the allowed range *)
+  END;
+
   r := Platform.Read(fd, p, l, f);
-  IF r >= 0 THEN RETURN TRUE ELSE RETURN FALSE END
+  Out.String("Read result: "); Out.Int(r, 0); Out.Ln;
+
+  IF r >= 0 THEN
+    RETURN TRUE
+  ELSE
+    Out.String("Read failed with error."); Out.Ln;
+    RETURN FALSE
+  END;
 END Read;
 
 PROCEDURE ReadBytes*(VAR fd: Socket; VAR buf: ARRAY OF CHAR; count: LONGINT): BOOLEAN;
@@ -54,6 +92,7 @@ VAR
   l, f: LONGINT;
   r: INTEGER;
 BEGIN
+  Out.String("entered ReadBytes"); Out.Ln;
   p := SYSTEM.ADR(buf[0]);
   l := LEN(buf)-1;
   f := 0;
@@ -65,24 +104,24 @@ END ReadBytes;
 
 PROCEDURE Connect*(host, port: ARRAY OF CHAR; VAR conn: Socket): BOOLEAN;
 VAR
-  hints, res : netdb.addrInfo;
-  pres, pres2, phints: netdb.PaddrInfo;
-  tmpaddr : SYSTEM.ADDRESS;
-  tmp32 : netdb.Int32;
-  (*conn : netdb.Int32;*)
+  hints, res: netdb.addrInfo;
+  pres: netdb.PaddrInfo;
+  tmp32: netdb.Int32;
+  aiFamily, aiSockType, aiProtocol: INTEGER;
+  errno: Platform.ErrorCode;
+  aiAddrLen: INTEGER;
 BEGIN
   hints.aiFamily := netSockets.AfUnspec;
   hints.aiSockType := netSockets.SockStream;
   hints.aiFlags := 0;
   hints.aiProtocol := netdb.ipprotoTCP;
   hints.aiAddrLen := 0;
-  hints.aiAddr := 0; hints.aiCanonName := 0; hints.aiNext := 0;
+  hints.aiAddr := 0;
+  hints.aiCanonName := 0;
+  hints.aiNext := 0;
 
-  phints := SYSTEM.VAL(netdb.PaddrInfo, SYSTEM.ADR(hints));
   pres := SYSTEM.VAL(netdb.PaddrInfo, SYSTEM.ADR(res));
-  pres2 := SYSTEM.VAL(netdb.PaddrInfo, SYSTEM.ADR(pres));
-
-  tmp32 := netdb.getAddrInfo(host, port, phints, pres2);
+  tmp32 := netdb.getAddrInfo(host, port, SYSTEM.ADR(hints), SYSTEM.ADR(pres));
 
   IF tmp32 # 0 THEN
     Out.String("getaddrinfo() failed"); Out.Ln;
@@ -91,32 +130,71 @@ BEGIN
     Out.String("getaddrinfo() returned 0, success"); Out.Ln;
   END;
 
-  conn := netSockets.Socket(pres^.aiFamily, pres^.aiSockType, pres^.aiProtocol);
+  (* Extract and log values for debugging *)
+  aiFamily := SYSTEM.VAL(INTEGER, pres^.aiFamily);
+  aiSockType := SYSTEM.VAL(INTEGER, pres^.aiSockType);
+  aiProtocol := SYSTEM.VAL(INTEGER, pres^.aiProtocol);
+  aiAddrLen := SYSTEM.VAL(INTEGER, pres^.aiAddrLen);
+
+  Out.String("aiFamily: "); Out.Int(aiFamily, 0);
+  Out.String(", aiSockType: "); Out.Int(aiSockType, 0);
+  Out.String(", aiProtocol: "); Out.Int(aiProtocol, 0); Out.Ln;
+  Out.String("aiAddrLen: "); Out.Int(aiAddrLen, 0); Out.Ln;
+
+  (* Create the socket *)
+  conn := netSockets.Socket(aiFamily, aiSockType, aiProtocol);
 
   IF conn = -1 THEN
-    Out.String("socket() returned -1, error"); Out.Ln;
-    HALT(1);
+    Out.String("socket() returned -1, error."); Out.Ln;
+    errno := Platform.Error();
+    Out.String("Error code: "); Out.Int(errno, 0); Out.Ln;
+    HALT(2);
   ELSE
     Out.String("socket() succeeded."); Out.Ln;
   END;
 
-  tmpaddr := SYSTEM.ADR(pres^.aiAddr);
-
-  tmp32 := netSockets.Connect(conn, pres^.aiAddr, pres^.aiAddrLen);
-  netdb.freeAddrInfo(pres);
-  IF tmp32 = 0 THEN
-    Out.String("connect() succeeded."); Out.Ln;
-    RETURN TRUE
-  ELSE
-    Out.String("connect() failed."); Out.Ln;
-    RETURN FALSE
+  IF pres = NIL THEN
+    Out.String("Error: pres pointer is NIL."); Out.Ln;
+    HALT(3);
   END;
+
+  IF pres^.aiAddr = 0 THEN
+    Out.String("Error: pres^.aiAddr is NIL."); Out.Ln;
+    HALT(4);
+  ELSE
+    Out.String("aiAddr is valid for connection."); Out.Ln;
+    Out.String("aiAddr address: "); Out.Hex(SYSTEM.VAL(INTEGER, pres^.aiAddr), 8); Out.Ln;
+  END;
+
+  (* Attempt to connect *)
+  tmp32 := netSockets.Connect(conn, pres^.aiAddr, aiAddrLen);
+
+  IF tmp32 # 0 THEN
+    Out.String("connect() failed with error code: ");
+    Out.Int(tmp32, 0); Out.Ln;
+    errno := Platform.Error();
+    Out.String("Connect error code: "); Out.Int(errno, 0); Out.Ln;
+    HALT(5);
+  ELSE
+    Out.String("connect() succeeded."); Out.Ln;
+  END;
+
+  (* Free the address info structure after the connection attempt *)
+  IF pres # NIL THEN
+    Out.String("trying to free addrinfo"); Out.Ln;
+    netdb.freeAddrInfo(SYSTEM.VAL(SYSTEM.ADDRESS, pres));
+    Out.String("Addrinfo freed"); Out.Ln;
+  ELSE
+    Out.String("Skipping freeAddrInfo as pres is NIL."); Out.Ln;
+  END;
+
+  RETURN TRUE
 END Connect;
 
-PROCEDURE -shtdwn (VAR fd: Socket)
+PROCEDURE -shtdwn (fd: Socket)
   "shutdown (fd, 2)";
 
-PROCEDURE Disconnect*(VAR fd: Socket);
+PROCEDURE Disconnect*(fd: Socket);
 VAR
   i : INTEGER;
 BEGIN

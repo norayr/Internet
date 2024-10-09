@@ -1,7 +1,7 @@
 MODULE netForker;
 IMPORT SYSTEM;
 
-PROCEDURE -includeunistd "#include <unistd.h>";
+PROCEDURE -A000 "#include <unistd.h>";
 PROCEDURE -fork*(): LONGINT "(LONGINT)fork()";
 
 

@@ -82,10 +82,15 @@ TYPE
     SaFamily* : Int16;
     SaData*   : ARRAY 14 OF CHAR
    END;
-(*
-   PROCEDURE -includeSockets
+
+
+
+   (* include socekt *)
+   PROCEDURE -A000
       "#include <sys/socket.h>";
-*)
+   PROCEDURE -A001
+      "#include <sys/types.h>";
+
    PROCEDURE -socket(domain, type, protocol: Int32): Int32
       "(int)socket(domain, type, protocol)";
 
@@ -94,8 +99,8 @@ TYPE
       RETURN socket(domain, type, protocol)
    END Socket;
 
-   PROCEDURE -bind(sockfd: Int32; VAR addr: SockAddr; addrlen: Int32): Int32
-      "(int)bind(sockfd, addr, addrlen)";
+  PROCEDURE -bind(sockfd: Int32; VAR addr: SockAddr; addrlen: Int32): Int32
+      "(int)bind(sockfd, (struct sockaddr*)addr, addrlen)";
 
    PROCEDURE Bind*(sockfd: Int32; VAR addr: SockAddr; addrlen: Int32): Int32;
    BEGIN
@@ -111,29 +116,26 @@ TYPE
    END Listen;
 
    PROCEDURE -accept(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32
-      "(int)accept(sockfd, addr, addrlen)";
+      "(int)accept(sockfd, (struct sockaddr*)addr, addrlen)";
 
    PROCEDURE -inclFcntl() "#include <fcntl.h>"; (* for O_NONBLOCK *)
-
-   PROCEDURE -acceptnb(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32
-      "(int)accept4(sockfd, addr, addrlen, O_NONBLOCK)"; (* linux only way *)
-
 
    PROCEDURE Accept*(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32;
    BEGIN
       RETURN accept(sockfd, addr, addrlen)
    END Accept;
-
+(*
    PROCEDURE AcceptNB*(sockfd: Int32; VAR addr: SockAddr; VAR addrlen: Int32): Int32;
    BEGIN
       RETURN acceptnb(sockfd, addr, addrlen)
    END AcceptNB;
-
+*)
 
     (* int connect(int sockfd, const struct sockaddr *addr,
                    socklen_t addrlen); *)
+
    PROCEDURE -connect(sockfd: Int32; addr: SYS.ADDRESS; addrlen: Int32): Int32
-     "(INTEGER)(connect(sockfd, addr, addrlen))";
+     "(int)connect(sockfd, (struct sockaddr*)addr, addrlen)";
 
 
    PROCEDURE Connect*(sockfd: Int32; sockaddr: SYS.ADDRESS; addrlen: Int32): Int32;
@@ -184,7 +186,7 @@ END SetSockAddrIn;
    also for using accept4, but that's linux only way
    these functions are the portable way of setting socket to non-blocking mode *)
 
-PROCEDURE -getFlags(VAR fd: LONGINT): LONGINT 
+PROCEDURE -getFlags(VAR fd: LONGINT): LONGINT
   "(LONGINT)fcntl( *fd, F_GETFL)";
 
 (* here be careful with the parentheses and the following asterisk, it is interpreted as an open comment by oberon parser *)

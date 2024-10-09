@@ -69,11 +69,14 @@ TYPE
      aiAddr*, aiCanonName*, aiNext*: SYSTEM.ADDRESS; (* pointers *)
    END;
 
+PROCEDURE -A000 "#include <sys/types.h>";
+PROCEDURE -A001 "#include <sys/socket.h>";
+PROCEDURE -A002 "#include <netdb.h>";
 
-PROCEDURE -getAddrInfo*(VAR node, service: ARRAY OF CHAR; hints: PaddrInfo; res: PaddrInfo): Int32
-"getaddrinfo (node, service, hints, res)";
+PROCEDURE -getAddrInfo*(VAR node, service: ARRAY OF CHAR; hints: SYSTEM.ADDRESS; res: SYSTEM.ADDRESS): Int32
+    "getaddrinfo (node, service, (struct addrinfo*)hints, (struct addrinfo**)res)";
 
-PROCEDURE -freeAddrInfo*( res: PaddrInfo)
-"freeaddrinfo(res)";
+PROCEDURE -freeAddrInfo*(res: SYSTEM.ADDRESS)
+    "freeaddrinfo((struct addrinfo*)res)";
 
 END netdb.

@@ -28,6 +28,7 @@ TYPE
 
 PROCEDURE -inclSgnl() "#include <signal.h>";
 PROCEDURE -ingoreChildExit() "signal(SIGCHLD,SIG_IGN)";
+PROCEDURE -A000 "#include <unistd.h>";
 (* if this is not done, exiting child remains zombie unless parent exits *)
 
 PROCEDURE Create*(): server;
@@ -35,7 +36,7 @@ VAR s: server;
 BEGIN
   NEW(s);
   s^.Port := defaultPort;
-  s^.MaxQueue := defaultMaxQ; 
+  s^.MaxQueue := defaultMaxQ;
   s^.handle := NIL;
   s^.timeoutval := 60.0;
   RETURN s
@@ -94,7 +95,7 @@ BEGIN
     Out.String("binding completed.")
   END;
   Out.Ln;
-    
+
   IF netSockets.Listen(s^.sockfd, s^.MaxQueue) # 0 THEN
     Out.String("listen() failed");
   ELSE
@@ -107,7 +108,7 @@ PROCEDURE serve*(VAR s: server; newNonBlock: BOOLEAN);
 VAR
   nb: BOOLEAN;
 BEGIN
-     
+
   LOOP
     s^.sockaddrlen := SIZE(netSockets.SockAddrIn);
 (* linux only way would be this *)
@@ -139,7 +140,7 @@ BEGIN
       IF nb THEN Out.String("socket set as non-blocking");
       ELSE Out.String("setting socket as non-blocking failed");
       END; Out.Ln;
- 
+
 
 
       Out.String("forked okay"); Out.Ln;
