@@ -19,10 +19,11 @@ VAR
 BEGIN
   l := SYSTEM.ADR(buf[0]);
   len := Strings.Length(buf);
+  (*
   Out.String("Client attempting to write: "); Out.String(buf); Out.Ln;
   Out.String("Buffer length: "); Out.Int(len, 0); Out.Ln;
   Out.String("Address of buffer: "); Out.Hex(SYSTEM.VAL(SYSTEM.INT64, l), 16); Out.Ln;
-
+  *)
   r := Platform.Write(fd, l, len);
 
   IF r = -1 THEN
@@ -31,7 +32,7 @@ BEGIN
     Out.Int(r, 0); Out.Ln;
     RETURN FALSE
   ELSE
-    Out.String("Client write() succeeded."); Out.Ln;
+    (* Out.String("Client write() succeeded."); Out.Ln; *)
     RETURN TRUE
   END;
 END Write;
@@ -40,16 +41,16 @@ PROCEDURE ReadBuf*(VAR fd: Socket; VAR buf: ARRAY OF CHAR; VAR n: LONGINT): BOOL
 VAR
   r : INTEGER;
 BEGIN
-  Out.String("entered ReadBuf"); Out.Ln;
+  (* Out.String("entered ReadBuf"); Out.Ln; *)
   r := Platform.ReadBuf(fd, buf, n); (* returns buffer length as n *)
-  Out.String("ReadBuf() called. Result: "); Out.Int(r, 0); Out.String(", Bytes read: "); Out.Int(n, 0); Out.Ln;
-
+  (* Out.String("ReadBuf() called. Result: "); Out.Int(r, 0); Out.String(", Bytes read: "); Out.Int(n, 0); Out.Ln; *)
+  (*
   IF n > 0 THEN
     Out.String("Data read into buffer: "); Out.String(buf); Out.Ln;
   ELSE
     Out.String("No data read."); Out.Ln;
   END;
-
+  *)
   IF r # 0 THEN
     RETURN FALSE
   ELSE
@@ -66,9 +67,11 @@ BEGIN
   p := SYSTEM.ADR(buf[0]);
   l := LEN(buf) - 1;
   f := 0;
+  (*
   Out.String("Reading from socket..."); Out.Ln;
   Out.String("Buffer address: "); Out.Hex(SYSTEM.VAL(SYSTEM.INT64, p), 16); Out.Ln;
   Out.String("Buffer length: "); Out.Int(l, 0); Out.Ln;
+  *)
 
   IF p = 0 THEN
     Out.String("Error: Buffer address is 0!"); Out.Ln;
@@ -76,7 +79,7 @@ BEGIN
   END;
 
   r := Platform.Read(fd, p, l, f);
-  Out.String("Read result: "); Out.Int(r, 0); Out.Ln;
+  (*Out.String("Read result: "); Out.Int(r, 0); Out.Ln;*)
 
   IF r >= 0 THEN
     RETURN TRUE
@@ -92,7 +95,7 @@ VAR
   l, f: LONGINT;
   r: INTEGER;
 BEGIN
-  Out.String("entered ReadBytes"); Out.Ln;
+  (*Out.String("entered ReadBytes"); Out.Ln;*)
   p := SYSTEM.ADR(buf[0]);
   l := LEN(buf)-1;
   f := 0;
@@ -126,8 +129,8 @@ BEGIN
   IF tmp32 # 0 THEN
     Out.String("getaddrinfo() failed"); Out.Ln;
     HALT(1);
-  ELSE
-    Out.String("getaddrinfo() returned 0, success"); Out.Ln;
+  (*ELSE
+    Out.String("getaddrinfo() returned 0, success"); Out.Ln;*)
   END;
 
   (* Extract and log values for debugging *)
@@ -135,12 +138,12 @@ BEGIN
   aiSockType := SYSTEM.VAL(INTEGER, pres^.aiSockType);
   aiProtocol := SYSTEM.VAL(INTEGER, pres^.aiProtocol);
   aiAddrLen := SYSTEM.VAL(INTEGER, pres^.aiAddrLen);
-
+  (*
   Out.String("aiFamily: "); Out.Int(aiFamily, 0);
   Out.String(", aiSockType: "); Out.Int(aiSockType, 0);
   Out.String(", aiProtocol: "); Out.Int(aiProtocol, 0); Out.Ln;
   Out.String("aiAddrLen: "); Out.Int(aiAddrLen, 0); Out.Ln;
-
+  *)
   (* Create the socket *)
   conn := netSockets.Socket(aiFamily, aiSockType, aiProtocol);
 
@@ -149,8 +152,8 @@ BEGIN
     errno := Platform.Error();
     Out.String("Error code: "); Out.Int(errno, 0); Out.Ln;
     HALT(2);
-  ELSE
-    Out.String("socket() succeeded."); Out.Ln;
+  (*ELSE
+    Out.String("socket() succeeded."); Out.Ln;*)
   END;
 
   IF pres = NIL THEN
@@ -161,9 +164,9 @@ BEGIN
   IF pres^.aiAddr = 0 THEN
     Out.String("Error: pres^.aiAddr is NIL."); Out.Ln;
     HALT(4);
-  ELSE
+  (*ELSE
     Out.String("aiAddr is valid for connection."); Out.Ln;
-    Out.String("aiAddr address: "); Out.Hex(SYSTEM.VAL(INTEGER, pres^.aiAddr), 8); Out.Ln;
+    Out.String("aiAddr address: "); Out.Hex(SYSTEM.VAL(INTEGER, pres^.aiAddr), 8); Out.Ln;*)
   END;
 
   (* Attempt to connect *)
@@ -175,17 +178,17 @@ BEGIN
     errno := Platform.Error();
     Out.String("Connect error code: "); Out.Int(errno, 0); Out.Ln;
     HALT(5);
-  ELSE
-    Out.String("connect() succeeded."); Out.Ln;
+  (*ELSE
+    Out.String("connect() succeeded."); Out.Ln;*)
   END;
 
   (* Free the address info structure after the connection attempt *)
   IF pres # NIL THEN
-    Out.String("trying to free addrinfo"); Out.Ln;
+    (*Out.String("trying to free addrinfo"); Out.Ln;*)
     netdb.freeAddrInfo(SYSTEM.VAL(SYSTEM.ADDRESS, pres));
-    Out.String("Addrinfo freed"); Out.Ln;
+    (*Out.String("Addrinfo freed"); Out.Ln;
   ELSE
-    Out.String("Skipping freeAddrInfo as pres is NIL."); Out.Ln;
+    Out.String("Skipping freeAddrInfo as pres is NIL."); Out.Ln;*)
   END;
 
   RETURN TRUE
