@@ -65,6 +65,7 @@ END DoSmth;
 BEGIN
 s := server.Create();
 server.setPort(s, 2023);
+server.setListenOn(s, "127.0.0.1");
 server.setMaxQueue(s, 5);
 server.setTimeOut(s, 10.0);
 server.setHandler(s, DoSmth);

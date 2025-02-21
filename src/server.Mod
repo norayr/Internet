@@ -46,6 +46,12 @@ BEGIN
   RETURN s
 END Create;
 
+PROCEDURE setListenOn*(VAR s: server; ipstr: ARRAY OF CHAR);
+BEGIN
+   COPY(ipstr, s^.ListenOnStr);
+   s^.ListenOn := netSockets.inetAddr(s^.ListenOnStr);
+END setListenOn;
+
 PROCEDURE setHandler*(VAR s: server; h: handler);
 BEGIN
   IF s # NIL THEN
