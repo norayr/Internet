@@ -14,6 +14,8 @@ TYPE
     handler* = PROCEDURE (VAR s: server);
   serverDesc = RECORD
         Port : INTEGER;
+    ListenOn : LONGINT; (* ip on which to listen *)
+ ListenOnStr : ARRAY 16 OF CHAR;
     MaxQueue : INTEGER;
     sockfd   : LONGINT;
   newsockfd* : LONGINT;
@@ -39,6 +41,8 @@ BEGIN
   s^.MaxQueue := defaultMaxQ;
   s^.handle := NIL;
   s^.timeoutval := 60.0;
+  s^.ListenOnStr := "127.0.0.1";
+  s^.ListenOn := netSockets.inetAddr(s^.ListenOnStr);
   RETURN s
 END Create;
 
@@ -87,7 +91,7 @@ BEGIN
   END;
   Out.Ln;
 
-  netSockets.SetSockAddrIn(netSockets.AfInet, s^.Port, 0, s^.ServAddr);
+  netSockets.SetSockAddrIn(netSockets.AfInet, s^.Port, s^.ListenOn, s^.ServAddr);
 
   IF netSockets.Bind(s^.sockfd, SYSTEM.VAL(netSockets.SockAddr, s^.ServAddr), SIZE(netSockets.SockAddr)) < 0 THEN
     Out.String("error on binding")

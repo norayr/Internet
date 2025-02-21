@@ -90,6 +90,14 @@ TYPE
       "#include <sys/socket.h>";
    PROCEDURE -A001
       "#include <sys/types.h>";
+   PROCEDURE -A002
+      "#include <arpa/inet.h>";
+
+   PROCEDURE -inetaddr(s: ARRAY OF CHAR): LONGINT "(LONGINT)inet_addr((char*)s)";
+   PROCEDURE inetAddr*(s: ARRAY OF CHAR): LONGINT;
+   BEGIN
+     RETURN inetaddr(s)
+   END inetAddr;
 
    PROCEDURE -socket(domain, type, protocol: Int32): Int32
       "(int)socket(domain, type, protocol)";
@@ -173,7 +181,7 @@ PROCEDURE -SetCShort(i: INTEGER; VAR si: Int16)
 PROCEDURE -SetCShortSwapped(i: INTEGER; VAR si: Int16)
      "*(short*)si = ((i >> 8) & 0x00ff) | ((i << 8) & 0xff00)";
 
-PROCEDURE SetSockAddrIn*(family, port, inaddr: Int16; VAR sai: SockAddrIn);
+PROCEDURE SetSockAddrIn*(family, port: Int16; inaddr: Int32; VAR sai: SockAddrIn);
    VAR i: INTEGER;
    BEGIN
      SetCShort(family, sai.SinFamily);
