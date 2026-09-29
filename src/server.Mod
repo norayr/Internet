@@ -1,6 +1,6 @@
 MODULE server;
 
-IMPORT netForker, netSockets, Internet, Out, SYSTEM, Platform, Strings;
+IMPORT netForker, netSockets, Out, SYSTEM, Platform, Strings, IntStr := oocIntStr;
 
 CONST
   defaultPort = 2055;
@@ -27,6 +27,51 @@ TYPE
  timeoutval- : LONGREAL;
       handle : handler
       END;
+
+(* moved here from Internet, its only user *)
+PROCEDURE getClientIP4(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);
+(* https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c *)
+CONST
+  one      = 0FFH;       (* 255 *)
+  two      = 0FF00H;     (* 65280 *)
+  three    = 0FF0000H;   (* 16711680 *)
+  four     = 0FF000000H; (* 4278190080 *)
+VAR
+  setSAddr : SET;
+  set1, set2, set3, set4: SET;
+  first, second, third, fourth: SET;
+  o1, o2, o3, o4 : LONGINT;
+  str0 : ARRAY 4 OF CHAR;
+BEGIN
+ set1 := SYSTEM.VAL(SET, one);
+ set2 := SYSTEM.VAL(SET, two);
+ set3 := SYSTEM.VAL(SET, three);
+ set4 := SYSTEM.VAL(SET, four);
+
+ setSAddr := SYSTEM.VAL(SET, sai.SinAddr.SAddr);
+
+ first    := setSAddr * set1;
+ second   := setSAddr * set2;
+ third    := setSAddr * set3;
+ fourth   := setSAddr * set4;
+
+ o1 := SYSTEM.VAL(INTEGER, first);
+ o2 := SYSTEM.VAL(LONGINT, SYSTEM.LSH(second, -8));
+ o3 := SYSTEM.VAL(LONGINT, SYSTEM.LSH(third,  -16));
+ o4 := SYSTEM.VAL(LONGINT, SYSTEM.LSH(fourth, -24));
+
+ IntStr.IntToStr(o1, str);
+ Strings.Append(".", str);
+ IntStr.IntToStr(o2, str0);
+ Strings.Append(str0, str);
+ Strings.Append(".", str);
+ IntStr.IntToStr(o3, str0);
+ Strings.Append(str0, str);
+ Strings.Append(".", str);
+ IntStr.IntToStr(o4, str0);
+ Strings.Append(str0, str);
+
+END getClientIP4;
 
 PROCEDURE -inclSgnl() "#include <signal.h>";
 PROCEDURE -ingoreChildExit() "signal(SIGCHLD,SIG_IGN)";
@@ -154,7 +199,7 @@ BEGIN
 
 
       Out.String("forked okay"); Out.Ln;
-      Internet.getClientIP4(s^.ServAddr, s^.clientIP);
+      getClientIP4(s^.ServAddr, s^.clientIP);
       (* getting current pid *)
       s^.pid := Platform.PID;
       s^.res := Platform.Close(s^.sockfd);
