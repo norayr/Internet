@@ -24,6 +24,10 @@ build_deps:
 	make -f $(DPS)/time/GNUmakefile BUILD=$(BUILD)
 
 buildThis:
+	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Linux0.Mod
+	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Kernel.Mod
+	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Sockets.Mod
+	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/DNS.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netTypes.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netdb.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netSockets.Mod
@@ -34,6 +38,7 @@ buildThis:
 tests:
 	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testServer.Mod -m
 	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testClient.Mod -m
+	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testSockets.Mod -m
 
 clean:
 	if [ -d "$(BUILD)" ]; then rm -rf $(BLD); fi

@@ -1,5 +1,9 @@
 MODULE Internet; (*noch 14.4.2017 / 14.4.2017*)
-IMPORT netSockets, netdb, netTypes, Strings, Out, Platform, IntStr := oocIntStr, SYSTEM;
+(* The old interface, now over polpo's Sockets and DNS (Sockets.Mod and DNS.Mod are the files
+   of polpo, src/lib/sockets and src/lib/dns, unchanged; Linux0 and Kernel give them the few
+   calls they need here): Connect takes host names and IPv6, and returns FALSE instead of
+   halting. New code can use Sockets and DNS directly, the same as in polpo. *)
+IMPORT Sockets, DNS, Linux0, netSockets, netTypes, Strings, Out, Platform, IntStr := oocIntStr, SYSTEM;
 
 TYPE
 
@@ -8,8 +12,6 @@ TYPE
   Int16 = netTypes.Int16;
   Int32 = netTypes.Int32;
   Int64 = netTypes.Int64;
-
-PROCEDURE -A002 "#include <netdb.h>";
 
 PROCEDURE Write*(VAR fd: Socket; buf: ARRAY OF CHAR): BOOLEAN;
 VAR
@@ -105,104 +107,45 @@ BEGIN
   IF r >= 0 THEN RETURN TRUE ELSE RETURN FALSE END
 END ReadBytes;
 
-PROCEDURE Connect*(host, port: ARRAY OF CHAR; VAR conn: Socket): BOOLEAN;
-VAR
-  hints, res: netdb.addrInfo;
-  pres: netdb.PaddrInfo;
-  tmp32: netdb.Int32;
-  aiFamily, aiSockType, aiProtocol: INTEGER;
-  errno: Platform.ErrorCode;
-  aiAddrLen: INTEGER;
+(* the port: a number, or http, https *)
+PROCEDURE PortNumber(VAR port: ARRAY OF CHAR): LONGINT;
+VAR i, n: LONGINT;
 BEGIN
-  hints.aiFamily := netSockets.AfUnspec;
-  hints.aiSockType := netSockets.SockStream;
-  hints.aiFlags := 0;
-  hints.aiProtocol := netdb.ipprotoTCP;
-  hints.aiAddrLen := 0;
-  hints.aiAddr := 0;
-  hints.aiCanonName := 0;
-  hints.aiNext := 0;
+  IF port = "http" THEN RETURN 80 ELSIF port = "https" THEN RETURN 443 END;
+  n := 0; i := 0;
+  WHILE (port[i] >= "0") & (port[i] <= "9") DO n := n * 10 + ORD(port[i]) - ORD("0"); INC(i) END;
+  IF (i = 0) OR (port[i] # 0X) THEN RETURN -1 END;
+  RETURN n
+END PortNumber;
 
-  pres := SYSTEM.VAL(netdb.PaddrInfo, SYSTEM.ADR(res));
-  tmp32 := netdb.getAddrInfo(host, port, SYSTEM.ADR(hints), SYSTEM.ADR(pres));
-
-  IF tmp32 # 0 THEN
-    Out.String("getaddrinfo() failed"); Out.Ln;
-    HALT(1);
-  (*ELSE
-    Out.String("getaddrinfo() returned 0, success"); Out.Ln;*)
+(** connect to host (a name, an IPv4 or an IPv6 address) and port; its addresses are tried in turn.
+  With polpo's DNS and Sockets, as in polpo. *)
+PROCEDURE Connect*(host, port: ARRAY OF CHAR; VAR conn: Socket): BOOLEAN;
+VAR a: ARRAY 8 OF Sockets.Address; n, i, p: LONGINT; s: Sockets.Socket;
+BEGIN
+  conn := -1;
+  p := PortNumber(port);
+  IF p < 0 THEN Out.String("Internet.Connect: bad port "); Out.String(port); Out.Ln; RETURN FALSE END;
+  DNS.Lookup(host, DNS.Any, a, n);
+  IF n = 0 THEN
+    Out.String("Internet.Connect: "); Out.String(host);
+    IF DNS.res = DNS.NotFound THEN Out.String(" not found") ELSE Out.String(": no answer from the name servers") END;
+    Out.Ln; RETURN FALSE
   END;
-
-  (* Extract and log values for debugging *)
-  aiFamily := SYSTEM.VAL(INTEGER, pres^.aiFamily);
-  aiSockType := SYSTEM.VAL(INTEGER, pres^.aiSockType);
-  aiProtocol := SYSTEM.VAL(INTEGER, pres^.aiProtocol);
-  aiAddrLen := SYSTEM.VAL(INTEGER, pres^.aiAddrLen);
-  (*
-  Out.String("aiFamily: "); Out.Int(aiFamily, 0);
-  Out.String(", aiSockType: "); Out.Int(aiSockType, 0);
-  Out.String(", aiProtocol: "); Out.Int(aiProtocol, 0); Out.Ln;
-  Out.String("aiAddrLen: "); Out.Int(aiAddrLen, 0); Out.Ln;
-  *)
-  (* Create the socket *)
-  conn := netSockets.Socket(aiFamily, aiSockType, aiProtocol);
-
-  IF conn = -1 THEN
-    Out.String("socket() returned -1, error."); Out.Ln;
-    errno := Platform.Error();
-    Out.String("Error code: "); Out.Int(errno, 0); Out.Ln;
-    HALT(2);
-  (*ELSE
-    Out.String("socket() succeeded."); Out.Ln;*)
+  i := 0; s := NIL;
+  WHILE (s = NIL) & (i < n) DO s := Sockets.Connect(a[i], p); INC(i) END;
+  IF s = NIL THEN
+    Out.String("Internet.Connect: connect() failed, error "); Out.Int(-Sockets.res, 0); Out.Ln; RETURN FALSE
   END;
-
-  IF pres = NIL THEN
-    Out.String("Error: pres pointer is NIL."); Out.Ln;
-    HALT(3);
-  END;
-
-  IF pres^.aiAddr = 0 THEN
-    Out.String("Error: pres^.aiAddr is NIL."); Out.Ln;
-    HALT(4);
-  (*ELSE
-    Out.String("aiAddr is valid for connection."); Out.Ln;
-    Out.String("aiAddr address: "); Out.Hex(SYSTEM.VAL(INTEGER, pres^.aiAddr), 8); Out.Ln;*)
-  END;
-
-  (* Attempt to connect *)
-  tmp32 := netSockets.Connect(conn, pres^.aiAddr, aiAddrLen);
-
-  IF tmp32 # 0 THEN
-    Out.String("connect() failed with error code: ");
-    Out.Int(tmp32, 0); Out.Ln;
-    errno := Platform.Error();
-    Out.String("Connect error code: "); Out.Int(errno, 0); Out.Ln;
-    HALT(5);
-  (*ELSE
-    Out.String("connect() succeeded."); Out.Ln;*)
-  END;
-
-  (* Free the address info structure after the connection attempt *)
-  IF pres # NIL THEN
-    (*Out.String("trying to free addrinfo"); Out.Ln;*)
-    netdb.freeAddrInfo(SYSTEM.VAL(SYSTEM.ADDRESS, pres));
-    (*Out.String("Addrinfo freed"); Out.Ln;
-  ELSE
-    Out.String("Skipping freeAddrInfo as pres is NIL."); Out.Ln;*)
-  END;
-
+  conn := s.fd;
   RETURN TRUE
 END Connect;
 
-PROCEDURE -shtdwn (fd: Socket)
-  "shutdown (fd, 2)";
-
+(** shut the connection down and close the socket *)
 PROCEDURE Disconnect*(fd: Socket);
-VAR
-  i : INTEGER;
+VAR r: LONGINT;
 BEGIN
-  (*i := Platform.Close(fd);*)
-  shtdwn(fd)
+  r := Linux0.Shutdown0(fd, 2); r := Linux0.Close0(fd)
 END Disconnect;
 
 PROCEDURE getClientIP4*(VAR sai: netSockets.SockAddrIn; VAR str: ARRAY OF CHAR);
