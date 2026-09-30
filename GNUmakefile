@@ -1,4 +1,3 @@
-DEPEND = github.com/norayr/time
 VOC = voc
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir_path := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -15,13 +14,9 @@ endif
 all: get_deps build_deps buildThis
 
 get_deps:
-	mkdir -p $(DPS)
-	if [ -d $(DPS)/time ]; then cd $(DPS)/time; git pull; cd -; else cd $(DPS); git clone https://github.com/norayr/time; cd -; fi
 
 build_deps:
 	mkdir -p $(BUILD)
-	cd $(BUILD)
-	make -f $(DPS)/time/GNUmakefile BUILD=$(BUILD)
 
 buildThis:
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Linux0.Mod
