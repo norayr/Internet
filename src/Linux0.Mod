@@ -57,6 +57,14 @@ PROCEDURE -sendto0(fd: LONGINT; buf: SYSTEM.ADDRESS; len, flags: LONGINT; addr: 
 PROCEDURE -recvfrom0(fd: LONGINT; buf: SYSTEM.ADDRESS; len, flags: LONGINT; addr, lenadr: SYSTEM.ADDRESS): LONGINT
   "(LONGINT)recvfrom(fd, (void*)buf, len, flags, (struct sockaddr*)addr, (socklen_t*)lenadr)";
 
+PROCEDURE -gettimeofday0(tv: SYSTEM.ADDRESS): LONGINT
+  "({struct timeval t; int r = gettimeofday(&t, 0); ((int*)tv)[0] = (int)t.tv_sec; ((int*)tv)[1] = (int)t.tv_usec; (LONGINT)r;})";
+
+(** seconds and microseconds since 1970 as two 32 bit numbers at tv, as in polpo; tz is ignored *)
+PROCEDURE GetTimeOfDay*(tv: SYSTEM.ADDRESS; tz: LONGINT): LONGINT;
+BEGIN RETURN Res(gettimeofday0(tv))
+END GetTimeOfDay;
+
 PROCEDURE Openat0*(dirfd: LONGINT; name: SYSTEM.ADDRESS; flags, mode: LONGINT): LONGINT;
 BEGIN RETURN Res(openat0(dirfd, name, flags, mode))
 END Openat0;
