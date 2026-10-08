@@ -3,7 +3,7 @@ MODULE Internet; (*noch 14.4.2017 / 14.4.2017*)
    Internet module (github.com/norayr/Internet), over polpo's Sockets and DNS.
    The same file serves voc and polpo; only the import of Out differs (polpo: Out := out). *)
 
-IMPORT Sockets, DNS, Linux0, Out, SYSTEM;  (* polpo: Out := out *)
+IMPORT Sockets, DNS, Linux0 := unixNet, Out, SYSTEM;  (* polpo: Linux0, Out := out *)
 
 CONST
   MSGNOSIGNAL = 4000H;  (* no SIGPIPE when the other side has closed *)

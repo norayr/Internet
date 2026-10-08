@@ -8,7 +8,7 @@ MODULE DNS;  (** host names to addresses: /etc/hosts, then the name servers of /
    answer section is taken. Truncated answers are used as far as they go (no TCP yet).
    Bytes are read with LONG(ORD(c)): ORD gives an INTEGER (16 bits). *)
 
-IMPORT Kernel, Linux0, Sockets, SYSTEM;
+IMPORT Kernel, Linux0 := unixNet, Sockets, SYSTEM;
 
 CONST
   Any* = 0;  (** Lookup family: IPv6 and IPv4 addresses *)

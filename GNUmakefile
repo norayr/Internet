@@ -19,7 +19,7 @@ build_deps:
 	mkdir -p $(BUILD)
 
 buildThis:
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Linux0.Mod
+	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/unixNet.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Kernel.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Sockets.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/DNS.Mod

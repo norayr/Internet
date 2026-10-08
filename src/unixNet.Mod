@@ -1,6 +1,7 @@
-MODULE Linux0;  (** voc: the Linux0 calls of polpo that Sockets and DNS use, through the C library *)
+MODULE unixNet;  (** voc: the Linux0 calls of polpo that Sockets and DNS use, through the C library *)
 
-(* polpo's Sockets.Mod and DNS.Mod compile unchanged with this module: the same names and
+(* polpo's Sockets.Mod and DNS.Mod compile with this module, imported as Linux0 := unixNet (in polpo
+   the kernel's own Linux0, so only the IMPORT line differs): the same names and
    parameters, negative Linux error numbers as results. Addresses are SYSTEM.ADDRESS here
    (64 bits on LP64), LONGINT in polpo. The socket constants of Sockets are those of Linux
    (MIPS excepted), so this is for voc on Linux. *)
@@ -135,4 +136,4 @@ PROCEDURE RecvFrom0*(fd: LONGINT; buf: SYSTEM.ADDRESS; len, flags: LONGINT; addr
 BEGIN RETURN Res(recvfrom0(fd, buf, len, flags, addr, lenadr))
 END RecvFrom0;
 
-END Linux0.
+END unixNet.

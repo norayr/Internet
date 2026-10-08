@@ -1,5 +1,5 @@
 MODULE testServer;
-IMPORT server, Internet, Linux0, Out, Platform, SYSTEM;
+IMPORT server, Internet, unixNet, Out, Platform, SYSTEM;
 
 VAR s: server.server;
 
@@ -7,7 +7,7 @@ VAR s: server.server;
 PROCEDURE Now(): LONGREAL;
 VAR tv: ARRAY 2 OF LONGINT; r: LONGINT;
 BEGIN
-  r := Linux0.GetTimeOfDay(SYSTEM.ADR(tv), 0);
+  r := unixNet.GetTimeOfDay(SYSTEM.ADR(tv), 0);
   RETURN tv[0] + tv[1] / 1000000.0
 END Now;
 

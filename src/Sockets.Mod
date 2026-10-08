@@ -5,7 +5,7 @@ MODULE Sockets;  (** TCP and UDP over IPv4 and IPv6, with the socket system call
    Errors: the procedures return FALSE or a negative count, res of the socket (or the variable
    res of the module) holds the negative Linux error number. *)
 
-IMPORT Linux0, SYSTEM;
+IMPORT Linux0 := unixNet, SYSTEM;
 
 CONST
   Inet4* = 4; Inet6* = 6;  (** address families *)
