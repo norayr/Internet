@@ -29,11 +29,15 @@ buildThis:
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/Internet.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netForker.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/server.Mod
+	# Native Oberon compatibility
+	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/native/NetSystem.Mod
 
 tests:
 	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testServer.Mod -m
 	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testClient.Mod -m
 	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/testSockets.Mod -m
+	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/native/testNetSystem.Mod -m
+	cd $(BUILD) && ./testNetSystem $(NET)
 
 clean:
 	if [ -d "$(BUILD)" ]; then rm -rf $(BLD); fi

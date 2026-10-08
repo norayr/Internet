@@ -16,6 +16,7 @@ CONST
 
 PROCEDURE -AAincSocket "#include <sys/socket.h>";
 PROCEDURE -AAincTime "#include <sys/time.h>";
+PROCEDURE -AAincSelect "#include <sys/select.h>";
 PROCEDURE -AAincUnistd "#include <unistd.h>";
 PROCEDURE -AAincFcntl "#include <fcntl.h>";
 PROCEDURE -AAincErrno "#include <errno.h>";
@@ -58,6 +59,8 @@ PROCEDURE -sendto0(fd: LONGINT; buf: SYSTEM.ADDRESS; len, flags: LONGINT; addr: 
 PROCEDURE -recvfrom0(fd: LONGINT; buf: SYSTEM.ADDRESS; len, flags: LONGINT; addr, lenadr: SYSTEM.ADDRESS): LONGINT
   "(LONGINT)recvfrom(fd, (void*)buf, len, flags, (struct sockaddr*)addr, (socklen_t*)lenadr)";
 
+PROCEDURE -select0(n: LONGINT; r, w, e, tv: SYSTEM.ADDRESS): LONGINT
+  "({struct timeval t, *p = 0; if (tv) {t.tv_sec = ((int*)tv)[0]; t.tv_usec = ((int*)tv)[1]; p = &t;} (LONGINT)select(n, (fd_set*)r, (fd_set*)w, (fd_set*)e, p);})";
 PROCEDURE -gettimeofday0(tv: SYSTEM.ADDRESS): LONGINT
   "({struct timeval t; int r = gettimeofday(&t, 0); ((int*)tv)[0] = (int)t.tv_sec; ((int*)tv)[1] = (int)t.tv_usec; (LONGINT)r;})";
 
@@ -65,6 +68,12 @@ PROCEDURE -gettimeofday0(tv: SYSTEM.ADDRESS): LONGINT
 PROCEDURE GetTimeOfDay*(tv: SYSTEM.ADDRESS; tz: LONGINT): LONGINT;
 BEGIN RETURN Res(gettimeofday0(tv))
 END GetTimeOfDay;
+
+(** select(2); the descriptor sets are bit arrays (descriptor k: bit k MOD 8 of byte k DIV 8), the
+  timeout is two 32 bit numbers (seconds, microseconds) as in polpo, or 0 to wait without end *)
+PROCEDURE Select0*(n: LONGINT; readfds, writefds, exceptfds, timeout: SYSTEM.ADDRESS): LONGINT;
+BEGIN RETURN Res(select0(n, readfds, writefds, exceptfds, timeout))
+END Select0;
 
 PROCEDURE Openat0*(dirfd: LONGINT; name: SYSTEM.ADDRESS; flags, mode: LONGINT): LONGINT;
 BEGIN RETURN Res(openat0(dirfd, name, flags, mode))
