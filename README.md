@@ -1,9 +1,9 @@
 # Internet
 
-Networking for [voc](https://github.com/vishaps/voc): TCP and UDP over IPv4 and IPv6, host
+Networking for [voc](https://github.com/vishapoberon/compiler): TCP and UDP over IPv4 and IPv6, host
 names, and the network interface of ETH Native Oberon for older programs.
 
-The modern modules are the same as in polpo (ETH Oberon on Linux): Sockets, DNS and Internet
+The modern modules are the same as in [polpo](https://github.com/polpo-system/polpo): Sockets, DNS and Internet
 compile unchanged in both; only their `IMPORT` lines differ. polpo makes the system calls itself,
 in its kernel module `Linux0`; here `unixNet` makes them through the C library, and the shared
 modules import it as `Linux0 := unixNet`.

@@ -8,7 +8,7 @@ MODULE NetSystem;  (** the NetSystem of ETH Native Oberon, over Sockets and DNS 
    IPAdr is an IPv4 address in network byte order, as in Native Oberon: the four bytes in memory
    order. Ports are INTEGER: ports above 32767 are negative numbers, as they were.
 
-   Differences from Native Oberon (see also README.md):
+   Differences from Native Oberon (also in README.md of github.com/norayr/Internet):
    - Names are looked up by DNS (/etc/hosts, then the name servers of /etc/resolv.conf); the
      NetSystem.Hosts section of Oberon.Text is not read.
    - GetName always gives "": DNS has no reverse lookup (PTR) yet. Native Oberon also gave ""
