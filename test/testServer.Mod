@@ -1,19 +1,27 @@
 MODULE testServer;
-IMPORT time, server, Internet, Out, Platform;
+IMPORT server, Internet, Linux0, Out, Platform, SYSTEM;
 
 VAR s: server.server;
+
+(* seconds since 1970 *)
+PROCEDURE Now(): LONGREAL;
+VAR tv: ARRAY 2 OF LONGINT; r: LONGINT;
+BEGIN
+  r := Linux0.GetTimeOfDay(SYSTEM.ADR(tv), 0);
+  RETURN tv[0] + tv[1] / 1000000.0
+END Now;
 
 PROCEDURE DoSmth(VAR s: server.server);
 VAR
   str, aff: ARRAY 256 OF CHAR;
   n: LONGINT;
-  startTime, endTime: time.unxTime;
+  startTime, endTime: LONGREAL;
   dfTime: LONGREAL;
   keep: BOOLEAN;
   i: INTEGER; (* Declare 'i' *)
 BEGIN
   keep := TRUE;
-  time.unixTime(startTime);
+  startTime := Now();
   aff := "Affirmative, Dave";
   REPEAT
     Out.String("Server waiting for client message..."); Out.Ln;
@@ -25,9 +33,9 @@ BEGIN
 
     IF ~Internet.ReadBuf(s^.newsockfd, str, n) THEN
       Out.String("ReadBuf() failed or no data available."); Out.Ln;
-      time.unixTime(endTime);
+      endTime := Now();
     ELSE
-      time.unixTime(startTime);
+      startTime := Now();
       Out.String("Server got message from client"); Out.Ln;
 
       IF n > 0 THEN
@@ -49,8 +57,8 @@ BEGIN
       END;
     END;
 
-    time.unixTime(endTime);
-    dfTime := time.unixTimeDiff(endTime, startTime);
+    endTime := Now();
+    dfTime := endTime - startTime;
     IF dfTime > s.timeoutval THEN keep := FALSE END;
     Platform.Delay(500);
   UNTIL ~keep;
