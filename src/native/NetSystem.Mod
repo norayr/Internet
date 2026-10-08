@@ -11,8 +11,8 @@ MODULE NetSystem;  (** the NetSystem of ETH Native Oberon, over Sockets and DNS 
    Differences from Native Oberon (also in README.md of github.com/norayr/Internet):
    - Names are looked up by DNS (/etc/hosts, then the name servers of /etc/resolv.conf); the
      NetSystem.Hosts section of Oberon.Text is not read.
-   - GetName always gives "": DNS has no reverse lookup (PTR) yet. Native Oberon also gave ""
-     when the lookup failed.
+   - GetName asks DNS.Reverse: /etc/hosts, then the PTR record; "" if there is none, as in
+     Native Oberon.
    - The local port of an active connection is chosen by the system (locPort is not used).
    - CloseConnection closes the connection in both directions, at once: read what you want
      first. In Native Oberon the connection could still receive after it (state in).
@@ -224,10 +224,12 @@ BEGIN
   END
 END GetIP;
 
-(** GetName is the reverse of GetIP. Given an ip-number, it delivers the name of a host.
-  Here always "": DNS has no reverse lookup yet. *)
+(** GetName is the reverse of GetIP. Given an ip-number, it delivers the name of a host ("" if it has none). *)
 PROCEDURE GetName*(IP: IPAdr; VAR name: ARRAY OF CHAR);
-BEGIN COPY("", name)
+VAR a: Sockets.Address;
+BEGIN
+  ToAddress(IP, a);
+  IF ~DNS.Reverse(a, name) THEN COPY("", name) END
 END GetName;
 
 (** -- TCP section. *)

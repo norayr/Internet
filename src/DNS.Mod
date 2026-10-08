@@ -1,4 +1,4 @@
-MODULE DNS;  (** host names to addresses: /etc/hosts, then the name servers of /etc/resolv.conf *)
+MODULE DNS;  (** host names to addresses and back: /etc/hosts, then the name servers of /etc/resolv.conf *)
 
 (* A name is looked up in /etc/hosts first, then asked of the name servers over UDP (A records
    for IPv4, AAAA for IPv6), each server waiting timeout milliseconds, Tries rounds. The servers
@@ -6,6 +6,8 @@ MODULE DNS;  (** host names to addresses: /etc/hosts, then the name servers of /
    environment variable DNS_SERVER (address, optionally #port) comes before them.
    The answers of a recursive server carry the whole CNAME chain, so every address record of the
    answer section is taken. Truncated answers are used as far as they go (no TCP yet).
+   Reverse gives the name of an address: /etc/hosts, then the PTR record of a.b.c.d.in-addr.arpa
+   (IPv4, also an IPv4 address mapped into IPv6) or of the 32 hexadecimal digits under ip6.arpa.
    Bytes are read with LONG(ORD(c)): ORD gives an INTEGER (16 bits). *)
 
 IMPORT Kernel, Linux0 := unixNet, Sockets, SYSTEM;
@@ -14,7 +16,7 @@ CONST
   Any* = 0;  (** Lookup family: IPv6 and IPv4 addresses *)
   (** res *)
   Ok* = 0; NotFound* = 1; NoAnswer* = 2; BadName* = 3;
-  TypeA = 1; TypeAAAA = 28; ClassIN = 1;
+  TypeA = 1; TypeAAAA = 28; TypePTR = 12; ClassIN = 1;
   Port = 53; Tries = 2; MaxServers = 4; MaxMsg = 1500;
 
 VAR
@@ -155,6 +157,28 @@ BEGIN
   END
 END Hosts;
 
+PROCEDURE SameAddress(VAR x, y: Sockets.Address): BOOLEAN;
+VAR i, m: LONGINT;
+BEGIN
+  IF x.family # y.family THEN RETURN FALSE END;
+  IF x.family = Sockets.Inet4 THEN m := 4 ELSE m := 16 END;
+  i := 0; WHILE (i < m) & (x.addr[i] = y.addr[i]) DO INC(i) END;
+  RETURN i = m
+END SameAddress;
+
+(* the first name of address x in /etc/hosts *)
+PROCEDURE HostsName(VAR x: Sockets.Address; VAR name: ARRAY OF CHAR): BOOLEAN;
+VAR i: LONGINT; w: ARRAY 256 OF CHAR; y: Sockets.Address;
+BEGIN
+  IF ~ReadFile("/etc/hosts") THEN RETURN FALSE END;
+  i := 0;
+  WHILE i < flen DO
+    IF Word(i, w) & Sockets.ParseAddress(w, y) & SameAddress(x, y) & Word(i, w) THEN COPY(w, name); RETURN TRUE END;
+    NextLine(i)
+  END;
+  RETURN FALSE
+END HostsName;
+
 (* ----- messages ----- *)
 
 PROCEDURE Put16(VAR m: ARRAY OF CHAR; VAR i: LONGINT; x: LONGINT);
@@ -212,6 +236,56 @@ BEGIN
   RETURN i <= len
 END SkipName;
 
+(* the name at m[i] (labels, or a pointer to them), with dots, into name; i moves past it *)
+PROCEDURE ReadName(VAR m: ARRAY OF CHAR; len: LONGINT; VAR i: LONGINT; VAR name: ARRAY OF CHAR): BOOLEAN;
+VAR p, c, k, jumps, l: LONGINT;
+BEGIN
+  p := i; k := 0; jumps := 0; i := -1;
+  LOOP
+    IF p >= len THEN RETURN FALSE END;
+    c := ORD(m[p]);
+    IF c = 0 THEN INC(p); EXIT
+    ELSIF c >= 0C0H THEN
+      IF (p + 1 >= len) OR (jumps > 32) THEN RETURN FALSE END;
+      IF i < 0 THEN i := p + 2 END;
+      p := (c - 0C0H) * 256 + ORD(m[p + 1]); INC(jumps)
+    ELSIF c >= 40H THEN RETURN FALSE
+    ELSE
+      IF p + 1 + c > len THEN RETURN FALSE END;
+      IF k > 0 THEN IF k < LEN(name) - 1 THEN name[k] := "." END; INC(k) END;
+      l := 0;
+      WHILE l < c DO
+        IF k < LEN(name) - 1 THEN name[k] := m[p + 1 + l] END;
+        INC(k); INC(l)
+      END;
+      INC(p, c + 1)
+    END
+  END;
+  IF i < 0 THEN i := p END;
+  IF k > LEN(name) - 1 THEN k := LEN(name) - 1 END;
+  name[k] := 0X;
+  RETURN TRUE
+END ReadName;
+
+(* the name of the first PTR record in answer m *)
+PROCEDURE PtrAnswer(VAR m: ARRAY OF CHAR; len: LONGINT; VAR name: ARRAY OF CHAR): BOOLEAN;
+VAR i, qd, an, rt, rc, rl, j: LONGINT;
+BEGIN
+  qd := Get16(m, 4); an := Get16(m, 6); i := 12;
+  WHILE qd > 0 DO
+    IF ~SkipName(m, len, i) THEN RETURN FALSE END;
+    INC(i, 4); DEC(qd)
+  END;
+  WHILE (an > 0) & (i < len) DO
+    IF ~SkipName(m, len, i) OR (i + 10 > len) THEN RETURN FALSE END;
+    rt := Get16(m, i); rc := Get16(m, i + 2); rl := Get16(m, i + 8); INC(i, 10);
+    IF i + rl > len THEN RETURN FALSE END;
+    IF (rc = ClassIN) & (rt = TypePTR) THEN j := i; RETURN ReadName(m, len, j, name) & (name[0] # 0X) END;
+    INC(i, rl); DEC(an)
+  END;
+  RETURN FALSE
+END PtrAnswer;
+
 (* the addresses of type t in answer m; the result code *)
 PROCEDURE Answer(VAR m: ARRAY OF CHAR; len, t: LONGINT; VAR a: ARRAY OF Sockets.Address; VAR n: LONGINT): LONGINT;
 VAR i, j, k, qd, an, rt, rc, rl: LONGINT; x: Sockets.Address;
@@ -238,9 +312,10 @@ BEGIN
   RETURN Ok
 END Answer;
 
-(* ask the servers for the records of type t; the result code *)
-PROCEDURE Ask(VAR name: ARRAY OF CHAR; t: LONGINT; VAR a: ARRAY OF Sockets.Address; VAR n: LONGINT): LONGINT;
-VAR q, m: ARRAY MaxMsg OF CHAR; qlen, len, id, try, j, k, r, fport, got: LONGINT;
+(* ask the servers for the records of type t: the first answer that is not a failure of the server
+  (rcode 0, or 3 for no such name), in m[0..len); the result code *)
+PROCEDURE Exchange(VAR name: ARRAY OF CHAR; t: LONGINT; VAR m: ARRAY OF CHAR; VAR len: LONGINT): LONGINT;
+VAR q: ARRAY MaxMsg OF CHAR; qlen, id, try, j, k, rc, fport, got: LONGINT;
   s: Sockets.Socket; from: Sockets.Address;
 BEGIN
   IF ~loaded THEN LoadServers END;
@@ -259,8 +334,10 @@ BEGIN
             len := Sockets.ReceiveFrom(s, m, LEN(m), from, fport);
             IF len < 0 THEN got := 4
             ELSIF (len >= 12) & (Get16(m, 0) = id) & (ORD(m[2]) >= 80H) & (fport = sport[k]) THEN
-              r := Answer(m, len, t, a, n);
-              IF r # NoAnswer THEN Sockets.Close(s); first := k; RETURN r END;
+              rc := ORD(m[3]) MOD 16;
+              IF rc = 0 THEN Sockets.Close(s); first := k; RETURN Ok
+              ELSIF rc = 3 THEN Sockets.Close(s); first := k; RETURN NotFound
+              END;
               got := 4
             ELSE INC(got)
             END
@@ -273,6 +350,15 @@ BEGIN
     INC(try)
   END;
   RETURN NoAnswer
+END Exchange;
+
+(* ask the servers for the addresses of type t; the result code *)
+PROCEDURE Ask(VAR name: ARRAY OF CHAR; t: LONGINT; VAR a: ARRAY OF Sockets.Address; VAR n: LONGINT): LONGINT;
+VAR m: ARRAY MaxMsg OF CHAR; len, r: LONGINT;
+BEGIN
+  r := Exchange(name, t, m, len);
+  IF r = Ok THEN r := Answer(m, len, t, a, n) END;
+  RETURN r
 END Ask;
 
 (* ----- lookups ----- *)
@@ -307,6 +393,44 @@ BEGIN
   IF n > 0 THEN a := x[0] END;
   RETURN n > 0
 END Resolve;
+
+(** the name of address a (IPv4 or IPv6), from /etc/hosts or the PTR record; FALSE if there is
+  none; res tells what happened *)
+PROCEDURE Reverse*(VAR a: Sockets.Address; VAR name: ARRAY OF CHAR): BOOLEAN;
+VAR x: Sockets.Address; q: ARRAY 80 OF CHAR; m: ARRAY MaxMsg OF CHAR; hex: ARRAY 17 OF CHAR;
+  i, j, k, v, len: LONGINT;
+BEGIN
+  name[0] := 0X; res := Ok; x := a;
+  IF (x.family = Sockets.Inet6) & Sockets.Mapped(x) THEN
+    x.family := Sockets.Inet4; i := 0; WHILE i < 4 DO x.addr[i] := x.addr[12 + i]; INC(i) END
+  END;
+  IF HostsName(x, name) THEN RETURN TRUE END;
+  hex := "0123456789abcdef"; k := 0;
+  IF x.family = Sockets.Inet4 THEN  (* d.c.b.a.in-addr.arpa *)
+    i := 3;
+    WHILE i >= 0 DO
+      v := ORD(x.addr[i]);
+      IF v >= 100 THEN q[k] := CHR(ORD("0") + v DIV 100); INC(k) END;
+      IF v >= 10 THEN q[k] := CHR(ORD("0") + v DIV 10 MOD 10); INC(k) END;
+      q[k] := CHR(ORD("0") + v MOD 10); q[k + 1] := "."; INC(k, 2); DEC(i)
+    END;
+    COPY("in-addr.arpa", hex); j := 0; WHILE hex[j] # 0X DO q[k] := hex[j]; INC(k); INC(j) END
+  ELSIF x.family = Sockets.Inet6 THEN  (* the 32 digits backwards, ip6.arpa *)
+    i := 15;
+    WHILE i >= 0 DO
+      v := ORD(x.addr[i]);
+      q[k] := hex[v MOD 16]; q[k + 1] := "."; q[k + 2] := hex[v DIV 16]; q[k + 3] := "."; INC(k, 4); DEC(i)
+    END;
+    COPY("ip6.arpa", hex); j := 0; WHILE hex[j] # 0X DO q[k] := hex[j]; INC(k); INC(j) END
+  ELSE res := BadName; RETURN FALSE
+  END;
+  q[k] := 0X;
+  res := Exchange(q, TypePTR, m, len);
+  IF res = Ok THEN
+    IF ~PtrAnswer(m, len, name) THEN res := NotFound; name[0] := 0X END
+  END;
+  RETURN res = Ok
+END Reverse;
 
 BEGIN
   res := Ok; timeout := 2000; loaded := FALSE; seq := 0

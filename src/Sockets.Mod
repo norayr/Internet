@@ -232,21 +232,31 @@ BEGIN
   RETURN s
 END Connect;
 
-(** a TCP socket listening on port, on all local addresses of family; an IPv6 socket also
-  accepts IPv4 connections (as ::ffff:a.b.c.d); NIL if it fails (res) *)
-PROCEDURE Listen*(family: INTEGER; port, backlog: LONGINT): Socket;
-VAR s: Socket; a: Address; sa: ARRAY 28 OF CHAR; len, r, one, zero: LONGINT;
+(** a TCP socket listening on port at the local address a (127.0.0.1, ::1, an address of an
+  interface, or AnyAddress: all of them); an IPv6 socket at :: also accepts IPv4 connections
+  (as ::ffff:a.b.c.d); NIL if it fails (res) *)
+PROCEDURE ListenAt*(VAR a: Address; port, backlog: LONGINT): Socket;
+VAR s: Socket; sa: ARRAY 28 OF CHAR; len, r, one, zero: LONGINT;
 BEGIN
-  s := New(family, sockStream);
+  s := New(a.family, sockStream);
   IF s = NIL THEN RETURN NIL END;
   one := 1; zero := 0;
   r := Linux0.SetSockOpt0(s.fd, solSocket, soReuseAddr, SYSTEM.ADR(one), 4);
-  IF family = Inet6 THEN r := Linux0.SetSockOpt0(s.fd, IPPROTOIPV6, IPV6V6ONLY, SYSTEM.ADR(zero), 4) END;
-  AnyAddress(family, a); SockAddr(a, port, sa, len);
+  IF a.family = Inet6 THEN r := Linux0.SetSockOpt0(s.fd, IPPROTOIPV6, IPV6V6ONLY, SYSTEM.ADR(zero), 4) END;
+  SockAddr(a, port, sa, len);
   r := Linux0.Bind0(s.fd, SYSTEM.ADR(sa[0]), len);
   IF r >= 0 THEN r := Linux0.Listen0(s.fd, backlog) END;
   IF r < 0 THEN res := r; r := Linux0.Close0(s.fd); RETURN NIL END;
   RETURN s
+END ListenAt;
+
+(** a TCP socket listening on port, on all local addresses of family; an IPv6 socket also
+  accepts IPv4 connections (as ::ffff:a.b.c.d); NIL if it fails (res) *)
+PROCEDURE Listen*(family: INTEGER; port, backlog: LONGINT): Socket;
+VAR a: Address;
+BEGIN
+  AnyAddress(family, a);
+  RETURN ListenAt(a, port, backlog)
 END Listen;
 
 (** wait for a connection to the listening socket s; peer and port of the other side; NIL

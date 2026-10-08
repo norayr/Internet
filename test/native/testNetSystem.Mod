@@ -26,6 +26,8 @@ BEGIN
   NetSystem.GetIP("localhost", ip); NetSystem.ToNum(ip, s); Check("GetIP localhost = 127.0.0.1", s = "127.0.0.1");
   NetSystem.GetIP("10.0.0.7", ip); NetSystem.ToNum(ip, s); Check("GetIP 10.0.0.7", s = "10.0.0.7");
   NetSystem.GetIP("zq-no-such-host.invalid", ip); Check("GetIP of no host = anyIP", ip = NetSystem.anyIP);
+  NetSystem.ToHost("127.0.0.1", ip, ok); NetSystem.GetName(ip, s); Check("GetName 127.0.0.1 = localhost", s = "localhost");
+  NetSystem.ToHost("192.0.2.1", ip, ok); NetSystem.GetName(ip, s); Check("GetName of a documentation address = empty", s = "");
   NetSystem.PutInt(b, 0, -2); NetSystem.GetInt(b, 0, i);
   Check("PutInt, GetInt -2", (b[0] = 0FFX) & (b[1] = 0FEX) & (i = -2));
   NetSystem.ToNum(NetSystem.hostIP, s);
