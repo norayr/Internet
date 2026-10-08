@@ -14,10 +14,10 @@ modules import it as `Linux0 := unixNet`.
 | --- | --- |
 | `unixNet` | the system calls Sockets and DNS use (socket, connect, select, ...), through the C library, with polpo's `Linux0` names and results (negative error numbers) |
 | `Kernel` | `Kernel.GetConfig`: an environment variable, as polpo's |
-| `Sockets` | TCP and UDP sockets over IPv4 and IPv6, addresses as text and back |
-| `DNS` | host names to addresses: `/etc/hosts`, then the name servers of `/etc/resolv.conf` (A and AAAA, over UDP) |
+| `Sockets` | TCP and UDP sockets over IPv4 and IPv6 (`Listen` on all addresses, `ListenAt` on one), addresses as text and back |
+| `DNS` | host names to addresses and back: `/etc/hosts`, then the name servers of `/etc/resolv.conf` (A, AAAA and PTR, over UDP); `Lookup`, `Resolve`, `Reverse` |
 | `Internet` | the older interface: `Connect(host, port, conn)`, `Read`, `Write`, `Disconnect`, used by http |
-| `netTypes`, `netdb`, `netSockets`, `netForker`, `server` | the first wrappers of the C socket calls and a forking server; only `server` uses them |
+| `netForker`, `server` | a forking TCP server over Sockets (`setListenOn` IPv4 or IPv6, one child process per connection); testServer and testClient show it |
 | `native/NetSystem` | the NetSystem of Native Oberon (below) |
 
 ```
@@ -27,6 +27,12 @@ make tests NET=net   # testNetSystem also looks up example.com and gets its page
 build/testSockets lookup example.com
 build/testSockets get example.com 80 /
 ```
+
+## Deprecated: src/deprecated
+
+`netTypes`, `netdb` and `netSockets` were the first wrappers of the C socket calls (IPv4 only).
+Sockets and DNS replace them, and nothing here uses them any more; they are kept for old programs
+and built only by `make deprecated`.
 
 ## Native Oberon compatibility: src/native
 
@@ -42,8 +48,8 @@ INTEGERs (above 32767 negative), as they were.
 
 Where it differs from Native Oberon:
 
-- **GetName** always gives `""`: DNS has no reverse lookup (PTR) yet. (Native Oberon gave `""`
-  too when its lookup failed, so programs handle it.)
+- **GetName** asks `DNS.Reverse` (/etc/hosts, then the PTR record) and gives `""` when there is
+  no name, as Native Oberon did.
 - **CloseConnection** closes both directions at once. In Native Oberon the connection could
   still receive after it (state `in`) until the other side closed; here read what you want
   before closing.
