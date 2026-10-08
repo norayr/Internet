@@ -8,14 +8,19 @@ MODULE NetSystem;  (** the NetSystem of ETH Native Oberon, over Sockets and DNS 
    IPAdr is an IPv4 address in network byte order, as in Native Oberon: the four bytes in memory
    order. Ports are INTEGER: ports above 32767 are negative numbers, as they were.
 
-   Differences:
+   Differences from Native Oberon (see also README.md):
    - Names are looked up by DNS (/etc/hosts, then the name servers of /etc/resolv.conf); the
-     NetSystem.Hosts section of Oberon.Text is not read. GetName has no reverse lookup: name = "".
+     NetSystem.Hosts section of Oberon.Text is not read.
+   - GetName always gives "": DNS has no reverse lookup (PTR) yet. Native Oberon also gave ""
+     when the lookup failed.
    - The local port of an active connection is chosen by the system (locPort is not used).
-   - CloseConnection closes the connection in both directions: read what you want first.
-   - Passwords are kept in memory as before; SetPassword (an addition) sets one, SetUser does
-     nothing (there is no command line or Log to read one from).
-   - Start and Stop only set started; Show prints to the terminal. *)
+   - CloseConnection closes the connection in both directions, at once: read what you want
+     first. In Native Oberon the connection could still receive after it (state in).
+   - Passwords are kept in memory as in Native Oberon, but SetUser, which read them from the
+     command text and the keyboard, does nothing here. SetPassword sets one instead; it is not
+     in Native Oberon, it is added here.
+   - Start and Stop only set started; Show prints to the terminal (Out), not to the Log.
+   - Only IPv4: IPAdr has 32 bits, as in Native Oberon. *)
 
 IMPORT Sockets, DNS, Linux0 := unixNet, Out, SYSTEM;
 
@@ -253,7 +258,8 @@ BEGIN
   OpenConnection(C, locPort, remIP, remPort, res)  (* synchronously, as in Native Oberon *)
 END AsyncOpenConnection;
 
-(** Procedure closes the connection. Connection can not be used for send operations afterwards. *)
+(** Procedure closes the connection. Connection can not be used for send operations afterwards.
+  Here not for receiving either: unlike Native Oberon, both directions are closed at once. *)
 PROCEDURE CloseConnection*(C: Connection);
 BEGIN
   IF C # NIL THEN
@@ -517,8 +523,8 @@ BEGIN
   END
 END DelPassword;
 
-(** Set the password of user for service on host (replaces the one there was). Not in Native Oberon, where
-  the command SetUser read it. *)
+(** Set the password of user for service on host (replaces the one there was). Added here, not in Native
+  Oberon, where the command SetUser read it from the command text and the keyboard. *)
 PROCEDURE SetPassword*(service, user, host, password: ARRAY OF CHAR);
 VAR p: Password;
 BEGIN
@@ -528,7 +534,8 @@ BEGIN
   p.next := passwords; passwords := p
 END SetPassword;
 
-(** Command NetSystem.SetUser in Native Oberon; here nothing: use SetPassword. *)
+(** Command NetSystem.SetUser in Native Oberon (service:user[:password]@host ~, then the password); here
+  it does nothing: use SetPassword. *)
 PROCEDURE SetUser*;
 END SetUser;
 
