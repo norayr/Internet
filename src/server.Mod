@@ -94,6 +94,7 @@ PROCEDURE serve*(VAR s: server; newNonBlock: BOOLEAN);
 VAR peer: Sockets.Address; port: LONGINT;
 BEGIN
   IF s^.listener = NIL THEN Out.String("server: not listening (start)"); Out.Ln; RETURN END;
+  ignoreChildExit();  (* change child handling only when actually serving *)
   LOOP
     s^.conn := Sockets.Accept(s^.listener, peer, port);
     IF s^.conn = NIL THEN Out.String("error on accept"); Out.Ln
@@ -117,6 +118,4 @@ BEGIN
   END
 END serve;
 
-BEGIN
-  ignoreChildExit()
 END server.
