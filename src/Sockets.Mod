@@ -383,7 +383,7 @@ END ReceiveFrom;
 
 BEGIN
   res := 0;
-  IF Linux0.ARCH = "MIPS" THEN
+  IF (Linux0.ARCH = "MIPS") OR (Linux0.ARCH = "MIPSBE") THEN
     sockStream := 2; sockDgram := 1; solSocket := 0FFFFH; soReuseAddr := 4; soRcvTimeo := 1006H; soSndTimeo := 1005H
   ELSE sockStream := 1; sockDgram := 2; solSocket := 1; soReuseAddr := 2; soRcvTimeo := 20; soSndTimeo := 21
   END
