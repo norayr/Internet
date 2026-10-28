@@ -27,7 +27,8 @@ buildThis:
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/netForker.Mod
 	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/server.Mod
 	# Native Oberon compatibility
-	cd $(BUILD) && $(VOC) -s $(mkfile_dir_path)/src/native/NetSystem.Mod
+	# Keep a local symbol file so tests link this implementation even when its public interface is unchanged.
+	cd $(BUILD) && $(VOC) -sF $(mkfile_dir_path)/src/native/NetSystem.Mod
 
 # the first wrappers of the C socket calls, deprecated: Sockets replaces them
 deprecated:
@@ -46,6 +47,12 @@ tests:
 	cd $(BUILD) && $(VOC) $(mkfile_dir_path)/test/native/testNetSystem.Mod -m
 	cd $(BUILD) && ./testNetSystem $(NET)
 
+.PHONY: async-test
+async-test: all
+	cd $(BUILD) && OBERON=. MODULES= $(VOC) -O2 -sm $(mkfile_dir_path)/test/TestAsyncSockets.Mod
+	cd $(BUILD) && timeout 20 ./TestAsyncSockets
+	cd $(BUILD) && OBERON=. MODULES= $(VOC) -O2 -sm $(mkfile_dir_path)/test/TestAsyncNetSystem.Mod
+	cd $(BUILD) && python3 $(mkfile_dir_path)/test/async-netsystem.py ./TestAsyncNetSystem
+
 clean:
 	if [ -d "$(BUILD)" ]; then rm -rf $(BLD); fi
-
