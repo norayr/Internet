@@ -16,7 +16,7 @@ modules import it as `Linux0 := unixNet`.
 | `Kernel` | `Kernel.GetConfig`: an environment variable, as polpo's |
 | `Sockets` | TCP and UDP sockets over IPv4 and IPv6 (`Listen` on all addresses, `ListenAt` on one), addresses as text and back |
 | `DNS` | host names to addresses and back: `/etc/hosts`, then the name servers of `/etc/resolv.conf` (A, AAAA and PTR, over UDP); `Lookup`, `Resolve`, `Reverse` |
-| `Internet` | the older interface: `Connect(host, port, conn)`, `Read`, `Write`, `Disconnect`, used by http |
+| `Internet` | the older interface: `Connect(host, port, conn)`, `Read`, `Write`, `Disconnect`, used by http; `timeout` (milliseconds, 0 for none) limits each read and write on the connections `Connect` makes |
 | `netForker`, `server` | a forking TCP server over Sockets (`setListenOn` IPv4 or IPv6, one child process per connection); testServer and testClient show it |
 | `native/NetSystem` | the NetSystem of Native Oberon (below) |
 
